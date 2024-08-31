@@ -31,12 +31,12 @@ public class Board extends View {
 
     final private String TAG = "MainActivity";
     boolean isSquareEmpty = true;
-    boolean isTouchMoving = false;
+    boolean isSelected = false;
 
     //эти 3 значения переопределяются в onDraw
     int defX = 0;
     int defY = 0;
-    int squareSide = 120;               //размер квадрата
+    int squareSide = 120;     //размер квадрата
 
     static ArrayList<Piece> pieces = new ArrayList<>();
     static LinkedHashMap<Coordinate, RectF> squares = new LinkedHashMap<>();
@@ -75,7 +75,7 @@ public class Board extends View {
 
         drawChessBoard(canvas);
         lightTheSquares(canvas, lightedSquares);
-        lightedSquares.clear();
+        // lightedSquares.clear();
         drawPieces(canvas);
     }
 
@@ -142,12 +142,19 @@ public class Board extends View {
 
     }
 
+    private boolean canMoveThere(Coordinate coordinate) {
+        for (Coordinate coor : lightedSquares) {
+            return coordinate == coor;
+        }
+        return false;
+    }
+
     private boolean checkBordersOfView(float x, float y) {           //проверка не выходит ли указатель за рамки view при перемещении фигуры
         return x < MainActivity.board.getLeft() || x > MainActivity.board.getRight() || y < MainActivity.board.getTop() || y > MainActivity.board.getBottom();
     }
 
     private void makeMove(Piece oldPiece, Piece newPiece) {
-       /* if (oldPiece.getCoordinates().letter > 6
+        if (oldPiece.getCoordinates().letter > 6
                 || oldPiece.getCoordinates().letter < 2
                 || oldPiece.getCoordinates().number > 6
                 || oldPiece.getCoordinates().number <= 2) {
@@ -156,9 +163,10 @@ public class Board extends View {
 
         } else {
             pieces.add(newPiece);
+            Log.d(TAG, newPiece.getCoordinates().toString());
             pieces.remove(oldPiece);
-
-        }*/
+            Log.d(TAG, oldPiece.getCoordinates().toString());
+        }
         MainActivity.coor.setText(String.format("%s%s", newPiece.getCoordinates().letter, newPiece.getCoordinates().number));
         invalidate();
 
@@ -171,29 +179,34 @@ public class Board extends View {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             Coordinate currentCoor = new Coordinate(1 + ((int) (event.getX() - defX) / squareSide), (int) (9 - (event.getY() - defY) / squareSide));
             if (isPieceAtCoordinates(currentCoor)) {
-                MainActivity.coor.setText(String.format("%s%s", 1 + ((int) (event.getX() - defX) / squareSide), (int) (9 - (event.getY() - defY) / squareSide)));
-                defaultPiece = getPieceAtCoordinates(currentCoor);
+                MainActivity.coor.setText(String.format("%s-%s", 1 + ((int) (event.getX() - defX) / squareSide), (int) (9 - (event.getY() - defY) / squareSide)));
 
-                //   lightAnArea(defaultPiece.getCoordinates());
-                Log.d(TAG, "took");
+
             } else {
                 isSquareEmpty = false;
+                lightedSquares.clear();
+                invalidate();
             }
+
+
         }
-        if (event.getAction() == MotionEvent.ACTION_MOVE) {
-             lightedSquares.clear();
-              invalidate();
-        }
+
         if (event.getAction() == MotionEvent.ACTION_UP) {
             if (!checkBordersOfView(event.getX(), event.getY())) {
                 Coordinate currentCoor = new Coordinate(1 + ((int) (event.getX() - defX) / squareSide), (int) (9 - (event.getY() - defY) / squareSide));
 
-                if (!isPieceAtCoordinates(currentCoor) && isSquareEmpty) {
+                if (isPieceAtCoordinates(currentCoor)) {
+                    defaultPiece = getPieceAtCoordinates(currentCoor);
+                    lightAnArea(defaultPiece.getCoordinates());
+                    Log.d(TAG, "Тут есть фигура "+defaultPiece.getName()+defaultPiece.getCoordinates());
+                }
+
+                if (!isPieceAtCoordinates(currentCoor)) {
                     Piece newPiece = defaultPiece;
-                   // newPiece.setCoordinates(currentCoor);
-                    //makeMove(defaultPiece, newPiece);
+                    newPiece.setCoordinates(currentCoor);
+                    makeMove(defaultPiece, newPiece);
                     //invalidate();
-                    Log.d(TAG, "moved" + " " + defaultPiece.getName());
+                    Log.d(TAG, "moved" + " " + newPiece.getName());
                 } else {
                     Log.d(TAG, "square is busy");
                 }
@@ -206,19 +219,26 @@ public class Board extends View {
 
 
     private void lightAnArea(Coordinate coordinates) {
-        for (int j = 1; j >= -1; j--) {
-            for (int i = 1; i >= -1; i--) {
-                lightedSquares.add(new Coordinate(coordinates.letter - j, coordinates.number - i));
+        if (lightedSquares.isEmpty()) {
+            for (int j = 1; j >= -1; j--) {
+                for (int i = 1; i >= -1; i--) {
+                    lightedSquares.add(new Coordinate(coordinates.letter - j, coordinates.number - i));
+                }
             }
+
+            lightedSquares.removeIf(this::isPieceAtCoordinates);
+            lightedSquares.removeIf(coor -> coor.letter > 8
+                    || coor.letter < 1
+                    || coor.number > 8
+                    || coor.number < 1);
+            invalidate();
+
+        } else {
+            lightedSquares.clear();
+
+            invalidate();
         }
 
-        lightedSquares.removeIf(this::isPieceAtCoordinates);
-        lightedSquares.removeIf(coor -> coor.letter > 8
-                || coor.letter < 1
-                || coor.number > 8
-                || coor.number < 1);
-
-        invalidate();
 
     }
 

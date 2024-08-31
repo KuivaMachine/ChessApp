@@ -20,8 +20,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.chessandroid.Pieces.Piece;
 
 
-public class MainActivity extends AppCompatActivity implements GestureDetector.OnGestureListener {
-    GestureDetector GT;
+public class MainActivity extends AppCompatActivity {
+
 
    // Button up, down, right, left;
     @SuppressLint("StaticFieldLeak")
@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
         setContentView(R.layout.activity_main);
         board = findViewById(R.id.board_view);
 
-        GT = new GestureDetector(this, this);
+
         coor = findViewById(R.id.coor);
 
 
@@ -70,45 +70,12 @@ public class MainActivity extends AppCompatActivity implements GestureDetector.O
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-      //  GT.onTouchEvent(event);
-        if(event.getAction()==MotionEvent.ACTION_CANCEL){
-            Log.e(TAG, "CANCEL");
-        }
+
+
         coor.setText(String.format("%s\n%s", (int) event.getX(), (int) event.getY()));
-        Log.e(TAG, "onTouchEvent");
+
         return super.onTouchEvent(event);
     }
 
-    @Override
-    public boolean onDown(@NonNull MotionEvent e) {
-        Log.i(TAG, "onDown");
-        return false;
-    }
 
-    @Override
-    public void onShowPress(@NonNull MotionEvent e) {
-        Log.d(TAG, "onShowPress");
-    }
-
-    @Override
-    public boolean onSingleTapUp(@NonNull MotionEvent e) {
-        Log.d(TAG, "onSingleTapUp");
-        return false;
-    }
-
-    @Override
-    public boolean onScroll(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float distanceX, float distanceY) {
-        Log.d(TAG, "onScroll");
-        return false;
-    }
-
-    @Override
-    public void onLongPress(@NonNull MotionEvent e) {
-        Log.d(TAG, "onLongPress");
-    }
-
-    @Override
-    public boolean onFling(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float velocityX, float velocityY) {
-        return false;
-    }
 }
