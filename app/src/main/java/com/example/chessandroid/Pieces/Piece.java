@@ -21,6 +21,10 @@ public class Piece {
     String name;
     ColorWB colorWB;
 
+    public ColorWB getColorWB() {
+        return colorWB;
+    }
+
     public void setCoordinates(Coordinate coordinates) {
         this.coordinates = coordinates;
     }
@@ -35,6 +39,11 @@ public class Piece {
         if (o == null || getClass() != o.getClass()) return false;
         Piece piece = (Piece) o;
         return Objects.equals(coordinates, piece.coordinates) && Objects.equals(name, piece.name) && colorWB == piece.colorWB;
+    }
+
+    @Override
+    public String toString() {
+        return coordinates + " " + name + " "+ colorWB;
     }
 
     @Override

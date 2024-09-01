@@ -5,8 +5,6 @@ import java.util.Objects;
 
 public class Coordinate {
 
-
-
     int letter;
     int number;
 
@@ -31,8 +29,33 @@ public class Coordinate {
 
     @Override
     public String toString() {
-        return  letter +
-                " " + number ;
+        switch (letter){
+            case(1):
+                return  'A' +
+                        "" + number ;
+            case (2):
+                return  'B' +
+                        "" + number ;
+            case (3):
+                return  'C' +
+                        "" + number ;
+            case (4):
+                return  'D' +
+                        "" + number ;
+            case (5):
+                return  'E' +
+                        "" + number ;
+            case (6):
+                return  'F' +
+                        "" + number ;
+            case (7):
+                return  'G' +
+                        "" + number ;
+            case (8):
+                return  'H' +
+                        "" + number ;
+        }
+       return letter+" "+number;
     }
 }
 

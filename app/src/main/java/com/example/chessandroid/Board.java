@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.Objects;
 
 public class Board extends View {
 
@@ -30,36 +29,46 @@ public class Board extends View {
 
 
     final private String TAG = "MainActivity";
-    boolean isSquareEmpty = true;
-    boolean isSelected = false;
+    int defX = 0;                   //координата Х для начала отсчета доски
+    int defY = 0;                   //координата У для начала отсчета доски
+    int squareSide = 120;           //размер квадрата
+    float radius0fFreeMovePoint = 15;    //радиус точки, указывающей на доступные ходы
+    float indent = 5;                   //размер отступа внутри клетки до фигуры
 
-    //эти 3 значения переопределяются в onDraw
-    int defX = 0;
-    int defY = 0;
-    int squareSide = 120;     //размер квадрата
 
     static ArrayList<Piece> pieces = new ArrayList<>();
     static LinkedHashMap<Coordinate, RectF> squares = new LinkedHashMap<>();
-    HashMap<Piece, Bitmap> listOfPiecesAndPNG = new HashMap<>();
+    HashMap<String, Bitmap> listOfPiecesAndPNG = new HashMap<>();
     HashSet<Coordinate> lightedSquares = new HashSet<>();
 
     public Board(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
         makePNGList();
 
-
-        pieces.add(new Piece("King White", new Coordinate(4, 5), ColorWB.WHITE));
-        pieces.add(new Piece("King Black", new Coordinate(4, 6), ColorWB.BLACK));
-        pieces.add(new Piece("Queen White", new Coordinate(5, 1), ColorWB.WHITE));
+        pieces.add(new Piece("King White", new Coordinate(5, 5), ColorWB.WHITE));
+        pieces.add(new Piece("Queen White", new Coordinate(2, 1), ColorWB.WHITE));
+        pieces.add(new Piece("Rook White", new Coordinate(3, 1), ColorWB.WHITE));
+        pieces.add(new Piece("Knight White", new Coordinate(4, 1), ColorWB.WHITE));
+        pieces.add(new Piece("Bishop White", new Coordinate(5, 1), ColorWB.WHITE));
+        pieces.add(new Piece("Pawn White", new Coordinate(6, 1), ColorWB.WHITE));
 
     }
 
 
     public void makePNGList() {
-        listOfPiecesAndPNG.put(new Piece("King White", new Coordinate(4, 5), ColorWB.WHITE), BitmapFactory.decodeResource(getResources(), R.drawable.king_white));
-        listOfPiecesAndPNG.put(new Piece("King Black", new Coordinate(4, 6), ColorWB.BLACK), BitmapFactory.decodeResource(getResources(), R.drawable.king_black));
-        listOfPiecesAndPNG.put(new Piece("Queen White", new Coordinate(5, 1), ColorWB.WHITE), BitmapFactory.decodeResource(getResources(), R.drawable.queen_white));
-        listOfPiecesAndPNG.put(new Piece("Test", new Coordinate(8, 8), ColorWB.WHITE), BitmapFactory.decodeResource(getResources(), R.drawable.test_piece));
+        listOfPiecesAndPNG.put("King White", BitmapFactory.decodeResource(getResources(), R.drawable.king_white));
+        listOfPiecesAndPNG.put("King Black", BitmapFactory.decodeResource(getResources(), R.drawable.king_black));
+        listOfPiecesAndPNG.put("Queen White", BitmapFactory.decodeResource(getResources(), R.drawable.queen_white));
+        listOfPiecesAndPNG.put("Queen Black", BitmapFactory.decodeResource(getResources(), R.drawable.queen_black));
+        listOfPiecesAndPNG.put("Rook White", BitmapFactory.decodeResource(getResources(), R.drawable.rook_white));
+        listOfPiecesAndPNG.put("Rook Black", BitmapFactory.decodeResource(getResources(), R.drawable.rook_black));
+        listOfPiecesAndPNG.put("Knight White", BitmapFactory.decodeResource(getResources(), R.drawable.knight_white));
+        listOfPiecesAndPNG.put("Knight Black", BitmapFactory.decodeResource(getResources(), R.drawable.knight_black));
+        listOfPiecesAndPNG.put("Bishop White", BitmapFactory.decodeResource(getResources(), R.drawable.bishop_white));
+        listOfPiecesAndPNG.put("Bishop Black", BitmapFactory.decodeResource(getResources(), R.drawable.bishop_black));
+        listOfPiecesAndPNG.put("Pawn White", BitmapFactory.decodeResource(getResources(), R.drawable.pawn_white));
+        listOfPiecesAndPNG.put("Pawn Black", BitmapFactory.decodeResource(getResources(), R.drawable.pawn_black));
+        listOfPiecesAndPNG.put("Test", BitmapFactory.decodeResource(getResources(), R.drawable.test_piece));
 
     }
 
@@ -68,25 +77,24 @@ public class Board extends View {
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
-        defX = 0;
+        /*defX = 0;
         defY = 0;
-        squareSide = 120;
+        squareSide = 120;*/
         //   canvas.drawARGB(80, 0, 0, 255);                //заполняет весь холст цветом
 
-        drawChessBoard(canvas);
-        lightTheSquares(canvas, lightedSquares);
-        // lightedSquares.clear();
-        drawPieces(canvas);
+        drawChessBoard(canvas);                             //отрисовка доски
+        drawPieces(canvas);                                 //отрисовка фигур
+        lightTheAvailableMoves(canvas, lightedSquares);     //отрисовка доступных ходов
     }
 
     private void drawPieces(Canvas canvas) {            //рисует все фигуры из листа pieces
         for (Piece i : pieces) {
-            drawPieceAt(canvas, listOfPiecesAndPNG.get(i), squareToDown(Objects.requireNonNull(squares.get(i.getCoordinates()))));
+            drawPieceAt(canvas, listOfPiecesAndPNG.get(i.getName()), squareToDown(squares.get(i.getCoordinates())));
         }
     }
 
     private RectF squareToDown(RectF square) {              //уменьшает входящий квадрат на размер indent
-        float indent = 8;                   //размер отступа внутри клетки до фигуры
+
         return new RectF(square.left + indent, square.top + indent, square.right - indent, square.bottom - indent);
     }
 
@@ -95,15 +103,13 @@ public class Board extends View {
     }
 
     public void drawChessBoard(Canvas canvas) {
-        paint.setColor(Color.GREEN);
-        paint.setStrokeWidth(20);
         boolean colorWB = true;
         for (int j = 0; j < 8; j++) {
             for (int i = 0; i < 8; i++) {
                 if (colorWB) {
                     paint.setColor(Color.GRAY);
                 } else {
-                    paint.setColor(Color.GREEN);
+                    paint.setColor(Color.parseColor("#C31107"));
                 }
                 colorWB = !colorWB;
                 canvas.drawRect(defX + (squareSide * i), defY, defX + (squareSide * (i + 1)), (defY + squareSide), paint);
@@ -133,18 +139,20 @@ public class Board extends View {
         return null;
     }
 
-    private void lightTheSquares(Canvas canvas, HashSet<Coordinate> coordinates) {
-        paint.setColor(Color.RED);
+    private void lightTheAvailableMoves(Canvas canvas, HashSet<Coordinate> coordinates) {
+        paint.setColor(Color.WHITE);
         for (Coordinate coor : coordinates) {
             RectF rect = squares.get(coor);
-            canvas.drawRect(rect, paint);
+            canvas.drawCircle(rect.centerX(), rect.centerY(), radius0fFreeMovePoint, paint);
         }
 
     }
 
     private boolean canMoveThere(Coordinate coordinate) {
         for (Coordinate coor : lightedSquares) {
-            return coordinate == coor;
+            if (coordinate.equals(coor)) {
+                return true;
+            }
         }
         return false;
     }
@@ -154,22 +162,24 @@ public class Board extends View {
     }
 
     private void makeMove(Piece oldPiece, Piece newPiece) {
-        if (oldPiece.getCoordinates().letter > 6
-                || oldPiece.getCoordinates().letter < 2
-                || oldPiece.getCoordinates().number > 6
-                || oldPiece.getCoordinates().number <= 2) {
-            pieces.add(oldPiece);
-            pieces.remove(oldPiece);
 
-        } else {
-            pieces.add(newPiece);
-            Log.d(TAG, newPiece.getCoordinates().toString());
-            pieces.remove(oldPiece);
-            Log.d(TAG, oldPiece.getCoordinates().toString());
-        }
-        MainActivity.coor.setText(String.format("%s%s", newPiece.getCoordinates().letter, newPiece.getCoordinates().number));
+        MainActivity.coor.setText(String.format("%s-%s", oldPiece.getCoordinates(), newPiece.getCoordinates()));
+
+        pieces.remove(oldPiece);
+        pieces.add(newPiece);
+        lightedSquares.clear();
+        Log.d(TAG, "makeMove");
         invalidate();
+        Log.d(TAG, pieces.toString());
+    }
 
+    private Coordinate isVerticalFree(Coordinate coordinates) {
+        for (Piece piece : pieces) {
+            if (piece.getCoordinates().number == coordinates.number) {
+                return piece.getCoordinates();
+            }
+        }
+        return coordinates;
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -177,16 +187,6 @@ public class Board extends View {
     public boolean onTouchEvent(MotionEvent event) {
 
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            Coordinate currentCoor = new Coordinate(1 + ((int) (event.getX() - defX) / squareSide), (int) (9 - (event.getY() - defY) / squareSide));
-            if (isPieceAtCoordinates(currentCoor)) {
-                MainActivity.coor.setText(String.format("%s-%s", 1 + ((int) (event.getX() - defX) / squareSide), (int) (9 - (event.getY() - defY) / squareSide)));
-
-
-            } else {
-                isSquareEmpty = false;
-                lightedSquares.clear();
-                invalidate();
-            }
 
 
         }
@@ -197,50 +197,91 @@ public class Board extends View {
 
                 if (isPieceAtCoordinates(currentCoor)) {
                     defaultPiece = getPieceAtCoordinates(currentCoor);
-                    lightAnArea(defaultPiece.getCoordinates());
-                    Log.d(TAG, "Тут есть фигура "+defaultPiece.getName()+defaultPiece.getCoordinates());
+                    fillListOfLightedSquares(defaultPiece.getName(), defaultPiece.getCoordinates());
+                    Log.d(TAG, "Тут есть фигура " + defaultPiece.getName() + " " + defaultPiece.getCoordinates());
+                }
+
+                if (!isPieceAtCoordinates(currentCoor) && canMoveThere(currentCoor)) {
+                    Piece newPiece = new Piece(defaultPiece.getName(), currentCoor, defaultPiece.getColorWB());
+                    Log.d(TAG, "Сюда можно пойти - " + currentCoor);
+                    makeMove(defaultPiece, newPiece);
+
                 }
 
                 if (!isPieceAtCoordinates(currentCoor)) {
-                    Piece newPiece = defaultPiece;
-                    newPiece.setCoordinates(currentCoor);
-                    makeMove(defaultPiece, newPiece);
-                    //invalidate();
-                    Log.d(TAG, "moved" + " " + newPiece.getName());
-                } else {
-                    Log.d(TAG, "square is busy");
+                    Log.d(TAG, "square is empty");
+                    lightedSquares.clear();
+                    invalidate();
                 }
             }
-            isSquareEmpty = true;
+
         }
 
         return true;
     }
 
 
-    private void lightAnArea(Coordinate coordinates) {
-        if (lightedSquares.isEmpty()) {
-            for (int j = 1; j >= -1; j--) {
-                for (int i = 1; i >= -1; i--) {
-                    lightedSquares.add(new Coordinate(coordinates.letter - j, coordinates.number - i));
+    private void fillListOfLightedSquares(String name, Coordinate coordinates) {
+        if (name.equals("King White") || name.equals("King Black")) {
+            if (lightedSquares.isEmpty()) {
+                for (int j = 1; j >= -1; j--) {
+                    for (int i = 1; i >= -1; i--) {
+                        lightedSquares.add(new Coordinate(coordinates.letter - j, coordinates.number - i));
+                    }
                 }
+                Log.d(TAG, "Kinggg");
+            } else {
+                lightedSquares.clear();
             }
 
-            lightedSquares.removeIf(this::isPieceAtCoordinates);
-            lightedSquares.removeIf(coor -> coor.letter > 8
-                    || coor.letter < 1
-                    || coor.number > 8
-                    || coor.number < 1);
-            invalidate();
-
-        } else {
-            lightedSquares.clear();
-
-            invalidate();
         }
+
+        if (name.equals("Rook White") || name.equals("Rook Black")) {
+            if (lightedSquares.isEmpty()) {
+
+                for (int i = coordinates.number + 1; i <= 8; i++) {          //проход по вертикали вверх
+                    if (!isPieceAtCoordinates(new Coordinate(coordinates.letter, i))) {
+                        lightedSquares.add(new Coordinate(coordinates.letter, i));
+                    } else {
+                        break;
+                    }
+                }
+                for (int i = coordinates.number - 1; i >= 1; i--) {          //проход по вертикали вниз
+                    if (!isPieceAtCoordinates(new Coordinate(coordinates.letter, i))) {
+                        lightedSquares.add(new Coordinate(coordinates.letter, i));
+                    } else {
+                        break;
+                    }
+                }
+
+                for (int i = coordinates.letter + 1; i <= 8; i++) {          //проход по горизонтали вверх
+                    if (!isPieceAtCoordinates(new Coordinate(i, coordinates.number))) {
+                        lightedSquares.add(new Coordinate(i, coordinates.number));
+                    } else {
+                        break;
+                    }
+                }
+
+                for (int i = coordinates.letter - 1; i >= 1; i--) {          //проход по горизонтали вниз
+                    if (!isPieceAtCoordinates(new Coordinate(i, coordinates.number))) {
+                        lightedSquares.add(new Coordinate(i, coordinates.number));
+                    } else {
+                        break;
+                    }
+                }
+
+            } else {
+                lightedSquares.clear();
+            }
+
+        }
+        lightedSquares.removeIf(this::isPieceAtCoordinates);
+        lightedSquares.removeIf(coor -> coor.letter > 8
+                || coor.letter < 1
+                || coor.number > 8
+                || coor.number < 1);
+        invalidate();
 
 
     }
-
-
 }
