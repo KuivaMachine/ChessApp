@@ -18,14 +18,15 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.chessandroid.Pieces.Piece;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 
 public class MainActivity extends AppCompatActivity {
 
 
-   // Button up, down, right, left;
+    FloatingActionButton up;
     @SuppressLint("StaticFieldLeak")
-    static TextView coor;
+    static TextView coor, move;
     static Board board;
     final private String TAG = "MainActivity";
 
@@ -39,17 +40,24 @@ public class MainActivity extends AppCompatActivity {
 
 
         coor = findViewById(R.id.coor);
+move = findViewById(R.id.whosMove);
+
+     up = findViewById(R.id.btn);
+        up.setOnClickListener((v) -> {
+            Board.makeDefaultPlacement();
+
+            board.invalidate();
+        });
 
 
-       /* up = findViewById(R.id.up_btn);
-        down = findViewById(R.id.down_btn);
+
+
+       /* down = findViewById(R.id.down_btn);
         right = findViewById(R.id.right_btn);
         left = findViewById(R.id.left_btn);
 
 
-        up.setOnClickListener((v) -> {
-            makeMove(new Piece("King White", new Coordinate(Coordinate.lettersArray[Board.pieces.get(0).getCoordinates().getLetter()], Board.pieces.get(0).getCoordinates().number + 1), ColorWB.WHITE));
-        });
+
         down.setOnClickListener((v) -> {
             makeMove(new Piece("King White", new Coordinate(Coordinate.lettersArray[Board.pieces.get(0).getCoordinates().getLetter()], Board.pieces.get(0).getCoordinates().number - 1), ColorWB.WHITE));
         });
@@ -64,15 +72,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public void setTextOfCoors() {
-        coor.setText(String.format("%s%s", Board.pieces.get(0).getCoordinates().letter, Board.pieces.get(0).getCoordinates().number));
-    }
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
-
-        coor.setText(String.format("%s\n%s", (int) event.getX(), (int) event.getY()));
 
         return super.onTouchEvent(event);
     }
