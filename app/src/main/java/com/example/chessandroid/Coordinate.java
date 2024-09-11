@@ -29,33 +29,37 @@ public class Coordinate {
 
     @Override
     public String toString() {
+        return letter +""+number;
+    }
+/* @Override
+    public String toString() {
         switch (letter){
             case(1):
-                return  'A' +
+                return  'a' +
                         "" + number ;
             case (2):
-                return  'B' +
+                return  'b' +
                         "" + number ;
             case (3):
-                return  'C' +
+                return  'c' +
                         "" + number ;
             case (4):
-                return  'D' +
+                return  'd' +
                         "" + number ;
             case (5):
-                return  'E' +
+                return  'e' +
                         "" + number ;
             case (6):
-                return  'F' +
+                return  'f' +
                         "" + number ;
             case (7):
-                return  'G' +
+                return  'g' +
                         "" + number ;
             case (8):
-                return  'H' +
+                return  'h' +
                         "" + number ;
         }
        return letter+" "+number;
-    }
+    }*/
 }
 

@@ -2,4 +2,9 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="biegeLL">#FFE9BC</color>
+    <color name="biegeL">#FFE1A2</color>
+    <color name="biege">#FFD06F</color>
+    <color name="biegeD">#FFBA2F</color>
+    <color name="biegeDD">#FFAB00</color>
 </resources>
