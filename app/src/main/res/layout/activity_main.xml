@@ -5,22 +5,24 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-android:background="#2B2B2B"
+    android:background="#2B2B2B"
     tools:context=".MainActivity">
 
 
     <TextView
         android:id="@+id/coor"
+        android:gravity="center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="50dp"
         android:elevation="20dp"
-android:textColor="#C6C6C6"
-        android:textColorHint="#C6C6C6"
         android:hint="Coordinates"
+        android:textColor="#C6C6C6"
+        android:textColorHint="#C6C6C6"
         android:textSize="40sp"
         app:layout_constraintEnd_toEndOf="parent"
 
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
 
@@ -56,6 +58,7 @@ android:textColor="#C6C6C6"
         app:layout_constraintStart_toStartOf="parent"
         app:rippleColor="@color/white"
         app:srcCompat="@drawable/back" />
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btn_invert"
         android:layout_width="wrap_content"
@@ -69,6 +72,7 @@ android:textColor="#C6C6C6"
         app:layout_constraintStart_toStartOf="parent"
         app:rippleColor="@color/biegeLL"
         app:srcCompat="@drawable/invert" />
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btn_reload"
         android:layout_width="wrap_content"
@@ -90,9 +94,9 @@ android:textColor="#C6C6C6"
         android:layout_marginStart="15dp"
         android:elevation="20dp"
         android:gravity="center"
+        android:hint="Who is moving?"
         android:textColor="#C6C6C6"
         android:textColorHint="#C6C6C6"
-        android:hint="Who is moving?"
         android:textSize="25sp"
         app:layout_constraintBottom_toBottomOf="@id/btn_reload"
         app:layout_constraintStart_toEndOf="@id/btn_reload"
@@ -104,8 +108,10 @@ android:textColor="#C6C6C6"
         android:layout_height="wrap_content"
         android:layout_marginBottom="60dp"
         android:textSize="35sp"
+        android:textColor="@color/white"
         app:layout_constraintBottom_toBottomOf="@+id/whosMove"
         app:layout_constraintEnd_toEndOf="parent"
+        tools:text="check"
         app:layout_constraintStart_toStartOf="parent" />
 
 

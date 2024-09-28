@@ -10,14 +10,13 @@ import java.util.HashMap;
 
 
 public class Bitmaps extends View {
-    static int INDEX_OF_COLOR = 3;
     static HashMap<String, Bitmap> listOfPiecesAndPNG = new HashMap<>();
     static HashMap<String, String> colors = new HashMap<>();
     public Bitmaps(Context context) {
         super(context);
 
 
-        switch (INDEX_OF_COLOR) {
+        switch (Board.INDEX_OF_COLOR) {
 
             case (1):
                 listOfPiecesAndPNG.put("King White", BitmapFactory.decodeResource(getResources(), R.drawable.king_white));

@@ -1,6 +1,6 @@
 package com.example.chessandroid;
 
-import java.util.ArrayList;
+
 import java.util.Objects;
 
 public class Coordinate {
@@ -12,6 +12,14 @@ public class Coordinate {
         this.letter = letter;
         this.number = number;
 
+    }
+
+    public int getLetter() {
+        return letter;
+    }
+
+    public int getNumber() {
+        return number;
     }
 
     @Override

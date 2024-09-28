@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
         back = findViewById(R.id.back_btn);
         back.setOnClickListener(v -> {
             if (!Board.moveRecord.isEmpty()) {
-                board.makeBackMove(Board.moveRecord.getLast());
+                board.makeBackMoveByRecord(Board.moveRecord.getLast());
                 Board.moveRecord.removeLast();
             }
         });

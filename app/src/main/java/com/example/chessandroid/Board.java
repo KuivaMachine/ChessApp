@@ -2,32 +2,19 @@ package com.example.chessandroid;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
-import android.os.Environment;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.TextView;
 
 
 import com.example.chessandroid.enums.ColorOfPiece;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -35,7 +22,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 
-//СДЕЛАТЬ НОРМАЛЬНУЮ ЗАПИСЬ ХОДОВ = КТО, ОТКУДА, ИМЯ И ЦВЕТ, координаты
+
 //TODO: История ходов
 //TODO: Шах и мат
 //TODO: Рокировка (castling)
@@ -47,21 +34,22 @@ import java.util.LinkedList;
 
 public class Board extends View {
 
-    Piece fromPiece = new Piece();
+    Piece bufferPiece = new Piece();
     Paint paint = new Paint();
 
 
     //ПЕРЕМЕННЫЕ
     final private String TAG = "MainActivity";
-    float scaleFactor = 1f;                   //размер отступа внутри клетки до фигуры
+    float scaleFactor = 1f;                   //коэффициент размера доски
     float chessBoardSize;                       //размер всей доски
     int squareSide;                         //размер квадрата
     float defY;                          //координата У для начала отсчета доски
     float defX;                            //координата Х для начала отсчета доски
     float radius0fFreeMovePoint = 15;    //радиус точки, указывающей на доступные ходы
     float indent = 5;                   //размер отступа внутри клетки до фигуры
+    static int INDEX_OF_COLOR = 3;          //вариант дизайна фигур
     static boolean isWhiteMoving;       //проверка на очередность ходов
-    static boolean isInvertedBoard = false; //проаверка, является ли доска инвертированной
+    static boolean isInvertedBoard = false; //проверка, является ли доска инвертированной
     static boolean isCheck = false;         //флаг шаха
     ColorOfPiece checkColor;                 //цвет короля, которому сделан шах
 
@@ -77,57 +65,216 @@ public class Board extends View {
     public Board(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
         makeDefaultPlacement();
-
         new Bitmaps(this.getContext());
-
     }
 
-    public void makeBackMove(String line) {
-     //   String line = "Rook White\r12\reat\rRook Black\r24";
 
-        String[] parts = line.split("\r");
-        Log.d(TAG, String.valueOf(moveRecord));
+    @SuppressLint("ClickableViewAccessibility")
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
 
-        switch (parts[2]) {
+        if (event.getAction() == MotionEvent.ACTION_UP) {
+            if (!checkBordersOfView(event.getX(), event.getY())) {
+                Coordinate currentCoor = invertedCoordinates(event.getX(), event.getY());
+
+                if (isPieceAtCoordinates(currentCoor) && getPieceAtCoordinates(currentCoor).getColorOfPiece() == ColorOfPiece.WHITE && isWhiteMoving) {
+                    bufferPiece = getPieceAtCoordinates(currentCoor);
+                    canThePieceMove(bufferPiece);
+                    // Log.d(TAG, "Фигура выделена: " + fromPiece.getName() + " " + fromPiece.getCoordinates() + " " + fromPiece.isFirstMove());
+                }
+                if (isPieceAtCoordinates(currentCoor) && getPieceAtCoordinates(currentCoor).getColorOfPiece() == ColorOfPiece.BLACK && !isWhiteMoving) {
+                    bufferPiece = getPieceAtCoordinates(currentCoor);
+                    canThePieceMove(bufferPiece);
+                    //   Log.d(TAG, "Фигура выделена: " + fromPiece.getName() + " " + fromPiece.getCoordinates() + " " + fromPiece.isFirstMove());
+                }
+                if (isPieceAtCoordinates(currentCoor) && canMoveThere(currentCoor)) {
+                    Piece sacrificePiece = getPieceAtCoordinates(currentCoor);
+                    // Log.d(TAG, "Сюда можно пойти и съесть - " + currentCoor);
+                    eatThePiece(bufferPiece, sacrificePiece);
+                    check();
+                    afterMove(moveRecord.getLast());
+                    lightedSquares.clear();
+                }
+                if (!isPieceAtCoordinates(currentCoor) && canMoveThere(currentCoor)) {
+                    Piece gotoPiece = new Piece(bufferPiece.getName(), currentCoor, bufferPiece.getColorOfPiece(), true);
+                    makeMove(bufferPiece, gotoPiece);
+                    check();
+                    afterMove(moveRecord.getLast());
+                    lightedSquares.clear();
+                    //  Log.d(TAG, String.valueOf(pieces));
+                }
+                if (!isPieceAtCoordinates(currentCoor)) {
+                   // Log.d(TAG, "square is empty");
+                    lightedSquares.clear();
+                }
+                invalidate();
+            }
+        }
+        return true;
+    }
+
+
+    public void makeBackMoveByRecord(String line) {
+
+        String[] history = line.split("\r");
+        switch (history[2]) {
             case ("move"):
-                Piece from = new Piece(parts[0], new Coordinate(Integer.parseInt(String.valueOf(parts[1].charAt(0))), Integer.parseInt(String.valueOf(parts[1].charAt(1)))), ColorOfPiece.WHITE, false);
-                Piece to = getPieceAtCoordinates(new Coordinate(Integer.parseInt(String.valueOf(parts[3].charAt(0))), Integer.parseInt(String.valueOf(parts[3].charAt(1)))));
-                if (parts[0].endsWith("Black")) {
+                Piece from = new Piece(history[0], new Coordinate(Integer.parseInt(String.valueOf(history[1].charAt(0))), Integer.parseInt(String.valueOf(history[1].charAt(1)))), ColorOfPiece.WHITE, false);
+                Piece to = new Piece(history[0], new Coordinate(Integer.parseInt(String.valueOf(history[3].charAt(0))), Integer.parseInt(String.valueOf(history[3].charAt(1)))), ColorOfPiece.WHITE, false);
+                if (history[0].endsWith("Black")) {
                     from.setColorOfPiece(ColorOfPiece.BLACK);
                     to.setColorOfPiece(ColorOfPiece.BLACK);
                 }
-                makeMove(to, from);
-                //не может ходить назад под шах
+                makeBackMove(from, to);
+                check();
+                MainActivity.coor.setText(String.format("%s%s-%s", adapterPieceNames(from.getName()), to.getCoordinates(), from.getCoordinates()));
+                isWhiteMoving = !isWhiteMoving;
+                lightedSquares.clear();
+
                 break;
+
             case ("eat"):
-                Piece attackPiece = getPieceAtCoordinates(new Coordinate(Integer.parseInt(String.valueOf(parts[4].charAt(0))), Integer.parseInt(String.valueOf(parts[4].charAt(1)))));
-                Piece fromPiece = new Piece(attackPiece.getName(), new Coordinate(Integer.parseInt(String.valueOf(parts[1].charAt(0))), Integer.parseInt(String.valueOf(parts[1].charAt(1)))), attackPiece.getColorOfPiece(), false);
-                Piece sacrificePiece = new Piece(parts[3], new Coordinate(Integer.parseInt(String.valueOf(parts[4].charAt(0))), Integer.parseInt(String.valueOf(parts[4].charAt(1)))), ColorOfPiece.WHITE, false);
-                if (parts[3].endsWith("Black")) {
+                //   String line = "Rook White\r12\reat\rRook Black\r24";
+                Piece attackPiece = new Piece(history[0], new Coordinate(Integer.parseInt(String.valueOf(history[1].charAt(0))), Integer.parseInt(String.valueOf(history[1].charAt(1)))), ColorOfPiece.WHITE, false);
+                Piece sacrificePiece = new Piece(history[3], new Coordinate(Integer.parseInt(String.valueOf(history[4].charAt(0))), Integer.parseInt(String.valueOf(history[4].charAt(1)))), ColorOfPiece.WHITE, false);
+                if (history[3].endsWith("Black")) {
                     sacrificePiece.setColorOfPiece(ColorOfPiece.BLACK);
                 }
-                //надо добавитть логику
-
+                if (history[0].endsWith("Black")) {
+                    attackPiece.setColorOfPiece(ColorOfPiece.BLACK);
+                }
+                makeBackEat(attackPiece, sacrificePiece);
+                check();
+                isWhiteMoving = !isWhiteMoving;
+                lightedSquares.clear();
                 break;
         }
+        Log.d(TAG, String.valueOf(pieces));
+    }
+
+    private void makeMove(Piece fromPiece, Piece gotoPiece) {
+        pieces.remove(fromPiece);
+        pieces.add(gotoPiece);
+        moveRecord.add(fromPiece.getName() + "\r" + fromPiece.getCoordinates() + "\r" + "move" + "\r" + gotoPiece.getCoordinates());
+    Log.d(TAG, moveRecord.getLast());
+    }
 
 
+    public void makeBackMove(Piece fromPiece, Piece gotoPiece) {
+        pieces.remove(gotoPiece);
+        pieces.add(fromPiece);
+    }
+
+    private void eatThePiece(Piece oldAttackPiece, Piece sacrificePiece) {
+        Piece newAttackPiece = new Piece(oldAttackPiece.getName(), sacrificePiece.getCoordinates(), oldAttackPiece.getColorOfPiece(), false);
+
+        pieces.remove(oldAttackPiece);
+        pieces.remove(sacrificePiece);
+        pieces.add(newAttackPiece);
+        moveRecord.add(oldAttackPiece.getName() + "\r" + oldAttackPiece.getCoordinates() + "\r" + "eat" + "\r" + sacrificePiece.getName() + "\r" + sacrificePiece.getCoordinates());
+        Log.d(TAG, moveRecord.getLast());
+    }
+
+    public void makeBackEat(Piece oldAttackPiece, Piece sacrificePiece) {
+        Piece newAttackPiece = new Piece(oldAttackPiece.getName(), sacrificePiece.getCoordinates(), oldAttackPiece.getColorOfPiece(), false);
+
+        pieces.remove(newAttackPiece);
+        pieces.add(oldAttackPiece);
+        pieces.add(sacrificePiece);
+    }
+
+    private void check() {
+/*
+Очень важный метод - осуществялет проверку шаха в текущей позиции, после совершения хода.
+Вызывается после makeMove() и makeEat(), и делает следующее:
+1.Итерация по всему списку pieces и вызов у каждой фигуры метода canThePieceMove,
+чтобы заполнить список ее возможных ходов.
+2. В списке возможных ходов каждой фигуры проверятся, может и она съесть короля белых или черных.
+3. Если да, то флаг isCheck становится true - ШАХ.
+4. После есть два варианта событий для текущей позиции фигур на доске:
+- Шаха нет, либо он есть, но не нашему королю - все нормально, делаем обычный ход, записываем историю и т.д
+- Шах есть, и он нашему королю - придется откатить move (eat) назад и удалить последнюю запись в истории.
+*/
+        isCheck = false;
+        for (Piece piece : pieces) {
+            canThePieceMove(piece);
+            for (Coordinate coor : lightedSquares) {
+                if (isPieceAtCoordinates(coor)) {
+                    if (getPieceAtCoordinates(coor).getName().equals("King White")) {
+                        isCheck = true;
+                        checkColor = ColorOfPiece.WHITE;
+
+
+                    }
+                    if (getPieceAtCoordinates(coor).getName().equals("King Black")) {
+                        isCheck = true;
+                        checkColor = ColorOfPiece.BLACK;
+
+
+                    }
+                }
+            }
+        }
+
+    }
+public  void afterMove(String lastAction){
+
+    String[] history = lastAction.split("\r");
+    Piece lastMovedPiece = pieces.get(pieces.size() - 1);
+
+    if (!isCheck || !lastMovedPiece.getColorOfPiece().equals(checkColor)) {
+        switch (lastAction) {
+            case ("move"):
+                MainActivity.coor.setText(String.format("%s%s-%s", adapterPieceNames(bufferPiece.getName()), bufferPiece.getCoordinates(), lastMovedPiece.getCoordinates()));
+                break;
+            case ("eat"):
+                MainActivity.coor.setText(String.format("%s%sx%s", adapterPieceNames(lastMovedPiece.getName()), bufferPiece.getCoordinates(), lastMovedPiece.getCoordinates()));
+                break;
+        }
+        lastMovedPiece.setFirstMove(false);
+        MainActivity.coor.setText("");
+        isWhiteMoving = !isWhiteMoving;
+    }
+
+    if (isCheck && lastMovedPiece.getColorOfPiece().equals(checkColor)) {
+        switch (history[2]) {
+            case ("move"):
+                makeBackMove(bufferPiece, lastMovedPiece);
+                break;
+            case ("eat"):
+                Piece sacrificePiece = new Piece(history[3], new Coordinate(Integer.parseInt(String.valueOf(history[4].charAt(0))), Integer.parseInt(String.valueOf(history[4].charAt(1)))), ColorOfPiece.WHITE, false);
+                if (history[3].endsWith("Black")) {
+                    sacrificePiece.setColorOfPiece(ColorOfPiece.BLACK);
+                }
+                makeBackEat(lastMovedPiece, sacrificePiece);
+                break;
+        }
+        MainActivity.coor.setText(R.string.still_check_text);
+        moveRecord.removeLast();
+    }
+}
+    public void setCheckText(boolean isCheck) {
+        if (isCheck) {
+            if (checkColor == ColorOfPiece.BLACK) {
+                MainActivity.checkmate.setText(String.format("%s", "Шах черным!"));
+            }
+            if (checkColor == ColorOfPiece.WHITE) {
+                MainActivity.checkmate.setText(String.format("%s", "Шах белым!"));
+            }
+
+        } else {
+            MainActivity.checkmate.setText("");
+        }
     }
 
     public static void makeDefaultPlacement() { //УСТАНАВЛИВАЕТ НАЧАЛЬНУЮ РАССТАНОВКУ ФИГУР
         pieces.clear();
         lightedSquares.clear();
-        isWhiteMoving = false;
+        isWhiteMoving = true;
         isCheck = false;
 
-        pieces.add(new Piece("Rook White", new Coordinate(1, 5), ColorOfPiece.WHITE, true));
-        pieces.add(new Piece("Rook Black", new Coordinate(2, 5), ColorOfPiece.BLACK, true));
-        pieces.add(new Piece("Knight White", new Coordinate(2, 4), ColorOfPiece.WHITE, true));
-        pieces.add(new Piece("King Black", new Coordinate(6, 5), ColorOfPiece.BLACK, true));
-        //pieces.add(new Piece("Rook Black", new Coordinate(2, 6), ColorOfPiece.BLACK, true));
-        // pieces.add(new Piece("King White", new Coordinate(6, 5), ColorOfPiece.WHITE, true));
 
-        /*pieces.add(new Piece("King Black", new Coordinate(5, 8), ColorOfPiece.BLACK, true));
+        pieces.add(new Piece("King Black", new Coordinate(5, 8), ColorOfPiece.BLACK, true));
         pieces.add(new Piece("Queen Black", new Coordinate(4, 8), ColorOfPiece.BLACK, true));
         pieces.add(new Piece("Rook Black", new Coordinate(1, 8), ColorOfPiece.BLACK, true));
         pieces.add(new Piece("Rook Black", new Coordinate(8, 8), ColorOfPiece.BLACK, true));
@@ -149,7 +296,7 @@ public class Board extends View {
         for (int i = 1; i <= 8; i++) {
             pieces.add(new Piece("Pawn Black", new Coordinate(i, 7), ColorOfPiece.BLACK, true));
             pieces.add(new Piece("Pawn White", new Coordinate(i, 2), ColorOfPiece.WHITE, true));
-        }*/
+        }
     }
 
     public void writeWhoIsMove() {//ПИШЕТ КОГДА ЧЕЙ ХОД
@@ -171,6 +318,7 @@ public class Board extends View {
         drawPieces(canvas);                                 //отрисовка фигур
         lightTheAvailableMoves(canvas, lightedSquares);     //отрисовка доступных ходов
         writeWhoIsMove();                                   //пишет чей ход
+        setCheckText(isCheck);                              //пишет когда кому шах
 
 
     }
@@ -185,11 +333,11 @@ public class Board extends View {
 
     private void drawPieces(Canvas canvas) {            //рисует все фигуры из листа pieces
         for (Piece i : pieces) {
-            drawPieceAt(canvas, listOfPiecesAndPNG.get(i.getName()), squareToDown(squares.get(i.getCoordinates())));
+            drawPieceAt(canvas, listOfPiecesAndPNG.get(i.getName()), reduceThePiece(squares.get(i.getCoordinates())));
         }
     }
 
-    private RectF squareToDown(RectF square) {              //уменьшает входящий квадрат на размер indent
+    private RectF reduceThePiece(RectF square) {              //уменьшает входящий квадрат на размер indent
         return new RectF(square.left + indent, square.top + indent, square.right - indent, square.bottom - indent);
     }
 
@@ -272,166 +420,6 @@ public class Board extends View {
         }
     }
 
-    private void makeMove(Piece fromPiece, Piece gotoPiece) {
-
-        pieces.remove(fromPiece);
-        pieces.add(gotoPiece);
-        check();
-
-        if (check() == 0) {
-            MainActivity.coor.setText(String.format("%s%s-%s", adapterPieceNames(fromPiece.getName()), fromPiece.getCoordinates(), gotoPiece.getCoordinates()));
-            gotoPiece.setFirstMove(false);
-            isWhiteMoving = !isWhiteMoving;
-        }
-        if (check() > 0) {
-            if (gotoPiece.getColorOfPiece() != checkColor) {
-                MainActivity.coor.setText(String.format("%s%s-%s", adapterPieceNames(fromPiece.getName()), fromPiece.getCoordinates(), gotoPiece.getCoordinates()));
-                gotoPiece.setFirstMove(false);
-                isWhiteMoving = !isWhiteMoving;
-            } else {
-                MainActivity.coor.setText("CHECK!");
-                pieces.remove(gotoPiece);
-                pieces.add(fromPiece);
-            }
-
-        }
-
-        lightedSquares.clear();
-
-
-    }
-
-    private void eatThePiece(Piece fromPiece, Piece attackPiece, Piece sacrificePiece) {
-        pieces.remove(fromPiece);
-        pieces.remove(sacrificePiece);
-        pieces.add(attackPiece);
-        check();
-
-        if (check() == 0) {
-            MainActivity.coor.setText(String.format("%s%sx%s", adapterPieceNames(attackPiece.getName()), fromPiece.getCoordinates(), sacrificePiece.getCoordinates()));
-            attackPiece.setFirstMove(false);
-            isWhiteMoving = !isWhiteMoving;
-        }
-        if (check() > 0) {
-            if (attackPiece.getColorOfPiece() != checkColor) {
-                MainActivity.coor.setText(String.format("%s%sx%s", adapterPieceNames(attackPiece.getName()), fromPiece.getCoordinates(), sacrificePiece.getCoordinates()));
-                attackPiece.setFirstMove(false);
-                isWhiteMoving = !isWhiteMoving;
-            } else {
-                MainActivity.coor.setText("CHECK!");
-                pieces.remove(attackPiece);
-                pieces.add(fromPiece);
-                pieces.add(sacrificePiece);
-            }
-
-        }
-
-        lightedSquares.clear();
-
-    }
-
-    private String adapterPieceNames(String name) {
-        switch (name) {
-            case ("King Black"):
-            case ("King White"):
-                return "Кр";
-            case ("Queen Black"):
-            case ("Queen White"):
-                return "Ф";
-            case ("Rook Black"):
-            case ("Rook White"):
-                return "Л";
-            case ("Knight Black"):
-            case ("Knight White"):
-                return "К";
-            case ("Bishop Black"):
-            case ("Bishop White"):
-                return "С";
-            case ("Pawn Black"):
-            case ("Pawn White"):
-                return "";
-        }
-        return "SAS";
-    }
-
-    private int check() {
-        int countOfChecks = 0;
-
-        for (Piece piece : pieces) {
-            canThePieceMove(piece);
-            for (Coordinate coor : lightedSquares) {
-                if (isPieceAtCoordinates(coor)) {
-                    if (getPieceAtCoordinates(coor).getName().equals("King White")) {
-                        isCheck = true;
-                        checkColor = ColorOfPiece.WHITE;
-                        countOfChecks++;
-                    }
-                    if (getPieceAtCoordinates(coor).getName().equals("King Black")) {
-                        isCheck = true;
-                        checkColor = ColorOfPiece.BLACK;
-                        countOfChecks++;
-                    }
-                }
-            }
-        }
-        if (countOfChecks == 0) {
-            isCheck = false;
-        }
-        if (isCheck) {
-            if (checkColor == ColorOfPiece.BLACK) {
-                MainActivity.checkmate.setText(String.format("%s", "Шах черным!"));
-            }
-            if (checkColor == ColorOfPiece.WHITE) {
-                MainActivity.checkmate.setText(String.format("%s", "Шах белым!"));
-            }
-
-        } else {
-            MainActivity.checkmate.setText("");
-        }
-        return countOfChecks;
-    }
-
-    @SuppressLint("ClickableViewAccessibility")
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-
-        if (event.getAction() == MotionEvent.ACTION_UP) {
-            if (!checkBordersOfView(event.getX(), event.getY())) {
-                Coordinate currentCoor = invertedCoordinates(event.getX(), event.getY());
-                if (isPieceAtCoordinates(currentCoor) && getPieceAtCoordinates(currentCoor).getColorOfPiece() == ColorOfPiece.WHITE && isWhiteMoving) {
-                    fromPiece = getPieceAtCoordinates(currentCoor);
-                    canThePieceMove(fromPiece);
-                    // Log.d(TAG, "Фигура выделена: " + fromPiece.getName() + " " + fromPiece.getCoordinates() + " " + fromPiece.isFirstMove());
-                }
-                if (isPieceAtCoordinates(currentCoor) && getPieceAtCoordinates(currentCoor).getColorOfPiece() == ColorOfPiece.BLACK && !isWhiteMoving) {
-                    fromPiece = getPieceAtCoordinates(currentCoor);
-                    canThePieceMove(fromPiece);
-                    //   Log.d(TAG, "Фигура выделена: " + fromPiece.getName() + " " + fromPiece.getCoordinates() + " " + fromPiece.isFirstMove());
-                }
-                if (isPieceAtCoordinates(currentCoor) && canMoveThere(currentCoor)) {
-                    Piece attackPiece = new Piece(fromPiece.getName(), currentCoor, fromPiece.getColorOfPiece(), true);
-                    Piece sacrifice = getPieceAtCoordinates(currentCoor);
-                    // Log.d(TAG, "Сюда можно пойти и съесть - " + currentCoor);
-                    eatThePiece(fromPiece, attackPiece, sacrifice);
-                    moveRecord.add(attackPiece.getName() + "\r" + attackPiece.getCoordinates() + "\r" + "eat"+ "\r" + sacrifice.getName() + "\r" + sacrifice.getCoordinates());
-                    invalidate();
-                }
-                if (!isPieceAtCoordinates(currentCoor) && canMoveThere(currentCoor)) {
-                    Piece gotoPiece = new Piece(fromPiece.getName(), currentCoor, fromPiece.getColorOfPiece(), true);
-                    //Log.d(TAG, "Сюда можно пойти - " + currentCoor);
-                    makeMove(fromPiece, gotoPiece);
-                    moveRecord.add(fromPiece.getName() + "\r" + fromPiece.getCoordinates() + "\r" + "move" + "\r" + gotoPiece.getCoordinates());
-                    invalidate();
-                }
-                if (!isPieceAtCoordinates(currentCoor)) {
-                    Log.d(TAG, "square is empty");
-                    lightedSquares.clear();
-                    invalidate();
-                }
-            }
-        }
-        return true;
-    }
 
     private void canThePieceMove(Piece piece) { //заносит в лист те клетки, куда может пойти указанная фигура, в зав. от ее имени
         Coordinate coordinates = piece.getCoordinates();
@@ -442,7 +430,7 @@ public class Board extends View {
 
             for (int j = 1; j >= -1; j--) {
                 for (int i = 1; i >= -1; i--) {
-                    lightedSquares.add(new Coordinate(coordinates.letter - j, coordinates.number - i));
+                    lightedSquares.add(new Coordinate(coordinates.getLetter() - j, coordinates.getNumber() - i));
                 }
             }
 
@@ -470,26 +458,26 @@ public class Board extends View {
         if (piece.getName().equals("Pawn White")) {
             if (piece.isFirstMove()) {
                 for (int i = 1; i <= 2; i++) {
-                    if (!isPieceAtCoordinates(new Coordinate(coordinates.letter, coordinates.number + i))) {
-                        lightedSquares.add(new Coordinate(coordinates.letter, coordinates.number + i));
+                    if (!isPieceAtCoordinates(new Coordinate(coordinates.getLetter(), coordinates.getNumber() + i))) {
+                        lightedSquares.add(new Coordinate(coordinates.getLetter(), coordinates.getNumber() + i));
                     }
-                    if (isPieceAtCoordinates(new Coordinate(coordinates.letter - 1, coordinates.number + 1))) {
-                        lightedSquares.add(new Coordinate(coordinates.letter - 1, coordinates.number + 1));
+                    if (isPieceAtCoordinates(new Coordinate(coordinates.getLetter() - 1, coordinates.getNumber() + 1))) {
+                        lightedSquares.add(new Coordinate(coordinates.getLetter() - 1, coordinates.getNumber() + 1));
                     }
-                    if (isPieceAtCoordinates(new Coordinate(coordinates.letter + 1, coordinates.number + 1))) {
-                        lightedSquares.add(new Coordinate(coordinates.letter + 1, coordinates.number + 1));
+                    if (isPieceAtCoordinates(new Coordinate(coordinates.getLetter() + 1, coordinates.getNumber() + 1))) {
+                        lightedSquares.add(new Coordinate(coordinates.getLetter() + 1, coordinates.getNumber() + 1));
                     }
                 }
             }
             if (!piece.isFirstMove()) {
-                if (!isPieceAtCoordinates(new Coordinate(coordinates.letter, coordinates.number + 1))) {
-                    lightedSquares.add(new Coordinate(coordinates.letter, coordinates.number + 1));
+                if (!isPieceAtCoordinates(new Coordinate(coordinates.getLetter(), coordinates.getNumber() + 1))) {
+                    lightedSquares.add(new Coordinate(coordinates.getLetter(), coordinates.getNumber() + 1));
                 }
-                if (isPieceAtCoordinates(new Coordinate(coordinates.letter - 1, coordinates.number + 1))) {
-                    lightedSquares.add(new Coordinate(coordinates.letter - 1, coordinates.number + 1));
+                if (isPieceAtCoordinates(new Coordinate(coordinates.getLetter() - 1, coordinates.getNumber() + 1))) {
+                    lightedSquares.add(new Coordinate(coordinates.getLetter() - 1, coordinates.getNumber() + 1));
                 }
-                if (isPieceAtCoordinates(new Coordinate(coordinates.letter + 1, coordinates.number + 1))) {
-                    lightedSquares.add(new Coordinate(coordinates.letter + 1, coordinates.number + 1));
+                if (isPieceAtCoordinates(new Coordinate(coordinates.getLetter() + 1, coordinates.getNumber() + 1))) {
+                    lightedSquares.add(new Coordinate(coordinates.getLetter() + 1, coordinates.getNumber() + 1));
                 }
             }
 
@@ -499,26 +487,26 @@ public class Board extends View {
 
             if (piece.isFirstMove()) {
                 for (int i = 1; i <= 2; i++) {
-                    if (!isPieceAtCoordinates(new Coordinate(coordinates.letter, coordinates.number - i))) {
-                        lightedSquares.add(new Coordinate(coordinates.letter, coordinates.number - i));
+                    if (!isPieceAtCoordinates(new Coordinate(coordinates.getLetter(), coordinates.getNumber() - i))) {
+                        lightedSquares.add(new Coordinate(coordinates.getLetter(), coordinates.getNumber() - i));
                     }
-                    if (isPieceAtCoordinates(new Coordinate(coordinates.letter + 1, coordinates.number - 1))) {
-                        lightedSquares.add(new Coordinate(coordinates.letter + 1, coordinates.number - 1));
+                    if (isPieceAtCoordinates(new Coordinate(coordinates.getLetter() + 1, coordinates.getNumber() - 1))) {
+                        lightedSquares.add(new Coordinate(coordinates.getLetter() + 1, coordinates.getNumber() - 1));
                     }
-                    if (isPieceAtCoordinates(new Coordinate(coordinates.letter - 1, coordinates.number - 1))) {
-                        lightedSquares.add(new Coordinate(coordinates.letter - 1, coordinates.number - 1));
+                    if (isPieceAtCoordinates(new Coordinate(coordinates.getLetter() - 1, coordinates.getNumber() - 1))) {
+                        lightedSquares.add(new Coordinate(coordinates.getLetter() - 1, coordinates.getNumber() - 1));
                     }
                 }
             }
             if (!piece.isFirstMove()) {
-                if (!isPieceAtCoordinates(new Coordinate(coordinates.letter, coordinates.number - 1))) {
-                    lightedSquares.add(new Coordinate(coordinates.letter, coordinates.number - 1));
+                if (!isPieceAtCoordinates(new Coordinate(coordinates.getLetter(), coordinates.getNumber() - 1))) {
+                    lightedSquares.add(new Coordinate(coordinates.getLetter(), coordinates.getNumber() - 1));
                 }
-                if (isPieceAtCoordinates(new Coordinate(coordinates.letter + 1, coordinates.number - 1))) {
-                    lightedSquares.add(new Coordinate(coordinates.letter + 1, coordinates.number - 1));
+                if (isPieceAtCoordinates(new Coordinate(coordinates.getLetter() + 1, coordinates.getNumber() - 1))) {
+                    lightedSquares.add(new Coordinate(coordinates.getLetter() + 1, coordinates.getNumber() - 1));
                 }
-                if (isPieceAtCoordinates(new Coordinate(coordinates.letter - 1, coordinates.number - 1))) {
-                    lightedSquares.add(new Coordinate(coordinates.letter - 1, coordinates.number - 1));
+                if (isPieceAtCoordinates(new Coordinate(coordinates.getLetter() - 1, coordinates.getNumber() - 1))) {
+                    lightedSquares.add(new Coordinate(coordinates.getLetter() - 1, coordinates.getNumber() - 1));
                 }
             }
 
@@ -526,22 +514,22 @@ public class Board extends View {
 
         if (piece.getName().equals("Knight White") || piece.getName().equals("Knight Black")) {
 
-            lightedSquares.add(new Coordinate(coordinates.letter + 1, coordinates.number + 2));
-            lightedSquares.add(new Coordinate(coordinates.letter + 1, coordinates.number - 2));
-            lightedSquares.add(new Coordinate(coordinates.letter - 1, coordinates.number + 2));
-            lightedSquares.add(new Coordinate(coordinates.letter - 1, coordinates.number - 2));
+            lightedSquares.add(new Coordinate(coordinates.getLetter() + 1, coordinates.getNumber() + 2));
+            lightedSquares.add(new Coordinate(coordinates.getLetter() + 1, coordinates.getNumber() - 2));
+            lightedSquares.add(new Coordinate(coordinates.getLetter() - 1, coordinates.getNumber() + 2));
+            lightedSquares.add(new Coordinate(coordinates.getLetter() - 1, coordinates.getNumber() - 2));
 
-            lightedSquares.add(new Coordinate(coordinates.letter + 2, coordinates.number - 1));
-            lightedSquares.add(new Coordinate(coordinates.letter + 2, coordinates.number + 1));
-            lightedSquares.add(new Coordinate(coordinates.letter - 2, coordinates.number + 1));
-            lightedSquares.add(new Coordinate(coordinates.letter - 2, coordinates.number - 1));
+            lightedSquares.add(new Coordinate(coordinates.getLetter() + 2, coordinates.getNumber() - 1));
+            lightedSquares.add(new Coordinate(coordinates.getLetter() + 2, coordinates.getNumber() + 1));
+            lightedSquares.add(new Coordinate(coordinates.getLetter() - 2, coordinates.getNumber() + 1));
+            lightedSquares.add(new Coordinate(coordinates.getLetter() - 2, coordinates.getNumber() - 1));
 
         }
         lightedSquares.removeIf(i -> isPieceAtCoordinates(i) && getPieceAtCoordinates(i).getColorOfPiece().equals(piece.getColorOfPiece()));
-        lightedSquares.removeIf(coor -> coor.letter > 8
-                || coor.letter < 1
-                || coor.number > 8
-                || coor.number < 1);
+        lightedSquares.removeIf(coor -> coor.getLetter() > 8
+                || coor.getLetter() < 1
+                || coor.getNumber() > 8
+                || coor.getNumber() < 1);
 
 
         invalidate();
@@ -549,44 +537,44 @@ public class Board extends View {
 
     private void verticalAndHorizontalPassage(Coordinate coordinates) {     //ищет доступные ходы для фигуры по вертикали и горизонтали
 
-        for (int i = coordinates.number + 1; i <= 8; i++) {          //проход по вертикали вверх
-            if (!isPieceAtCoordinates(new Coordinate(coordinates.letter, i))) {
-                lightedSquares.add(new Coordinate(coordinates.letter, i));
+        for (int i = coordinates.getNumber() + 1; i <= 8; i++) {          //проход по вертикали вверх
+            if (!isPieceAtCoordinates(new Coordinate(coordinates.getLetter(), i))) {
+                lightedSquares.add(new Coordinate(coordinates.getLetter(), i));
             } else {
-                lightedSquares.add(new Coordinate(coordinates.letter, i));
+                lightedSquares.add(new Coordinate(coordinates.getLetter(), i));
                 break;
             }
         }
-        for (int i = coordinates.number - 1; i >= 1; i--) {          //проход по вертикали вниз
-            if (!isPieceAtCoordinates(new Coordinate(coordinates.letter, i))) {
-                lightedSquares.add(new Coordinate(coordinates.letter, i));
+        for (int i = coordinates.getNumber() - 1; i >= 1; i--) {          //проход по вертикали вниз
+            if (!isPieceAtCoordinates(new Coordinate(coordinates.getLetter(), i))) {
+                lightedSquares.add(new Coordinate(coordinates.getLetter(), i));
             } else {
-                lightedSquares.add(new Coordinate(coordinates.letter, i));
-                break;
-            }
-        }
-
-        for (int i = coordinates.letter + 1; i <= 8; i++) {          //проход по горизонтали вверх
-            if (!isPieceAtCoordinates(new Coordinate(i, coordinates.number))) {
-                lightedSquares.add(new Coordinate(i, coordinates.number));
-            } else {
-                lightedSquares.add(new Coordinate(i, coordinates.number));
+                lightedSquares.add(new Coordinate(coordinates.getLetter(), i));
                 break;
             }
         }
 
-        for (int i = coordinates.letter - 1; i >= 1; i--) {          //проход по горизонтали вниз
-            if (!isPieceAtCoordinates(new Coordinate(i, coordinates.number))) {
-                lightedSquares.add(new Coordinate(i, coordinates.number));
+        for (int i = coordinates.getLetter() + 1; i <= 8; i++) {          //проход по горизонтали вверх
+            if (!isPieceAtCoordinates(new Coordinate(i, coordinates.getNumber()))) {
+                lightedSquares.add(new Coordinate(i, coordinates.getNumber()));
             } else {
-                lightedSquares.add(new Coordinate(i, coordinates.number));
+                lightedSquares.add(new Coordinate(i, coordinates.getNumber()));
+                break;
+            }
+        }
+
+        for (int i = coordinates.getLetter() - 1; i >= 1; i--) {          //проход по горизонтали вниз
+            if (!isPieceAtCoordinates(new Coordinate(i, coordinates.getNumber()))) {
+                lightedSquares.add(new Coordinate(i, coordinates.getNumber()));
+            } else {
+                lightedSquares.add(new Coordinate(i, coordinates.getNumber()));
                 break;
             }
         }
     }
 
     private void diagonalPassage(Coordinate coordinates) { //ищет доступные ходы для фигуры по диагоналям
-        for (int i = coordinates.letter + 1, j = coordinates.number + 1; i <= 8 && j <= 8; i++, j++) {  //проход по правой диагонали вверх
+        for (int i = coordinates.getLetter() + 1, j = coordinates.getNumber() + 1; i <= 8 && j <= 8; i++, j++) {  //проход по правой диагонали вверх
             if (!isPieceAtCoordinates(new Coordinate(i, j))) {
                 lightedSquares.add(new Coordinate(i, j));
             } else {
@@ -594,7 +582,7 @@ public class Board extends View {
                 break;
             }
         }
-        for (int i = coordinates.letter - 1, j = coordinates.number - 1; i >= 1 && j >= 1; i--, j--) {  //проход по правой диагонали вниз
+        for (int i = coordinates.getLetter() - 1, j = coordinates.getNumber() - 1; i >= 1 && j >= 1; i--, j--) {  //проход по правой диагонали вниз
             if (!isPieceAtCoordinates(new Coordinate(i, j))) {
                 lightedSquares.add(new Coordinate(i, j));
             } else {
@@ -602,7 +590,7 @@ public class Board extends View {
                 break;
             }
         }
-        for (int i = coordinates.letter - 1, j = coordinates.number + 1; i >= 1 && j <= 8; i--, j++) {  //проход по левой диагонали вверх
+        for (int i = coordinates.getLetter() - 1, j = coordinates.getNumber() + 1; i >= 1 && j <= 8; i--, j++) {  //проход по левой диагонали вверх
             if (!isPieceAtCoordinates(new Coordinate(i, j))) {
                 lightedSquares.add(new Coordinate(i, j));
             } else {
@@ -610,7 +598,7 @@ public class Board extends View {
                 break;
             }
         }
-        for (int i = coordinates.letter + 1, j = coordinates.number - 1; i <= 8 && j >= 1; i++, j--) {  //проход по левой диагонали вниз
+        for (int i = coordinates.getLetter() + 1, j = coordinates.getNumber() - 1; i <= 8 && j >= 1; i++, j--) {  //проход по левой диагонали вниз
             if (!isPieceAtCoordinates(new Coordinate(i, j))) {
                 lightedSquares.add(new Coordinate(i, j));
             } else {
@@ -618,6 +606,30 @@ public class Board extends View {
                 break;
             }
         }
+    }
+
+    private String adapterPieceNames(String name) {
+        switch (name) {
+            case ("King Black"):
+            case ("King White"):
+                return "Кр";
+            case ("Queen Black"):
+            case ("Queen White"):
+                return "Ф";
+            case ("Rook Black"):
+            case ("Rook White"):
+                return "Л";
+            case ("Knight Black"):
+            case ("Knight White"):
+                return "К";
+            case ("Bishop Black"):
+            case ("Bishop White"):
+                return "С";
+            case ("Pawn Black"):
+            case ("Pawn White"):
+                return "";
+        }
+        return "SAS";
     }
     /*private String adapterPieceNames(String name) {
         switch (name) {
