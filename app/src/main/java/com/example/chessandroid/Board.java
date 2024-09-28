@@ -23,7 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 
 
-//TODO: История ходов
+//TODO: Убрать из доступных ходов кружки тех клеток, куда пойти нельзя (при шахе)
 //TODO: Шах и мат
 //TODO: Рокировка (castling)
 //TODO: Взятие на проходе (en passant)
@@ -33,7 +33,6 @@ import java.util.LinkedList;
 //TODO: пат и ничья (stalemate and draw)
 
 public class Board extends View {
-
     Piece bufferPiece = new Piece();
     Paint paint = new Paint();
 
@@ -96,7 +95,7 @@ public class Board extends View {
                     lightedSquares.clear();
                 }
                 if (!isPieceAtCoordinates(currentCoor) && canMoveThere(currentCoor)) {
-                    Piece gotoPiece = new Piece(bufferPiece.getName(), currentCoor, bufferPiece.getColorOfPiece(), true);
+                    Piece gotoPiece = new Piece(bufferPiece.getName(), currentCoor, bufferPiece.getColorOfPiece(), false);
                     makeMove(bufferPiece, gotoPiece);
                     check();
                     afterMove(moveRecord.getLast());
@@ -115,29 +114,28 @@ public class Board extends View {
 
 
     public void makeBackMoveByRecord(String line) {
-
+        //   String line = "Rook White\rfalse\r12\rmove\r24";
         String[] history = line.split("\r");
-        switch (history[2]) {
+        switch (history[3]) {
             case ("move"):
-                Piece from = new Piece(history[0], new Coordinate(Integer.parseInt(String.valueOf(history[1].charAt(0))), Integer.parseInt(String.valueOf(history[1].charAt(1)))), ColorOfPiece.WHITE, false);
-                Piece to = new Piece(history[0], new Coordinate(Integer.parseInt(String.valueOf(history[3].charAt(0))), Integer.parseInt(String.valueOf(history[3].charAt(1)))), ColorOfPiece.WHITE, false);
+                Piece from = new Piece(history[0], new Coordinate(Integer.parseInt(String.valueOf(history[2].charAt(0))), Integer.parseInt(String.valueOf(history[2].charAt(1)))), ColorOfPiece.WHITE, Boolean.parseBoolean(history[1]));
+                Piece to = new Piece(history[0], new Coordinate(Integer.parseInt(String.valueOf(history[4].charAt(0))), Integer.parseInt(String.valueOf(history[4].charAt(1)))), ColorOfPiece.WHITE, false);
                 if (history[0].endsWith("Black")) {
                     from.setColorOfPiece(ColorOfPiece.BLACK);
                     to.setColorOfPiece(ColorOfPiece.BLACK);
                 }
                 makeBackMove(from, to);
                 check();
-                MainActivity.coor.setText(String.format("%s%s-%s", adapterPieceNames(from.getName()), to.getCoordinates(), from.getCoordinates()));
                 isWhiteMoving = !isWhiteMoving;
                 lightedSquares.clear();
 
                 break;
 
             case ("eat"):
-                //   String line = "Rook White\r12\reat\rRook Black\r24";
-                Piece attackPiece = new Piece(history[0], new Coordinate(Integer.parseInt(String.valueOf(history[1].charAt(0))), Integer.parseInt(String.valueOf(history[1].charAt(1)))), ColorOfPiece.WHITE, false);
-                Piece sacrificePiece = new Piece(history[3], new Coordinate(Integer.parseInt(String.valueOf(history[4].charAt(0))), Integer.parseInt(String.valueOf(history[4].charAt(1)))), ColorOfPiece.WHITE, false);
-                if (history[3].endsWith("Black")) {
+                //   String line = "Rook White\rfalse\r12\reat\rRook Black\rfalse\r24";
+                Piece attackPiece = new Piece(history[0], new Coordinate(Integer.parseInt(String.valueOf(history[2].charAt(0))), Integer.parseInt(String.valueOf(history[2].charAt(1)))), ColorOfPiece.WHITE, Boolean.parseBoolean(history[1]));
+                Piece sacrificePiece = new Piece(history[4], new Coordinate(Integer.parseInt(String.valueOf(history[6].charAt(0))), Integer.parseInt(String.valueOf(history[6].charAt(1)))), ColorOfPiece.WHITE, Boolean.parseBoolean(history[5]));
+                if (history[4].endsWith("Black")) {
                     sacrificePiece.setColorOfPiece(ColorOfPiece.BLACK);
                 }
                 if (history[0].endsWith("Black")) {
@@ -155,7 +153,7 @@ public class Board extends View {
     private void makeMove(Piece fromPiece, Piece gotoPiece) {
         pieces.remove(fromPiece);
         pieces.add(gotoPiece);
-        moveRecord.add(fromPiece.getName() + "\r" + fromPiece.getCoordinates() + "\r" + "move" + "\r" + gotoPiece.getCoordinates());
+        moveRecord.add(fromPiece.getName()+ "\r"+fromPiece.isFirstMove() + "\r" + fromPiece.getCoordinates() + "\r" + "move" + "\r" + gotoPiece.getCoordinates());
     Log.d(TAG, moveRecord.getLast());
     }
 
@@ -171,7 +169,7 @@ public class Board extends View {
         pieces.remove(oldAttackPiece);
         pieces.remove(sacrificePiece);
         pieces.add(newAttackPiece);
-        moveRecord.add(oldAttackPiece.getName() + "\r" + oldAttackPiece.getCoordinates() + "\r" + "eat" + "\r" + sacrificePiece.getName() + "\r" + sacrificePiece.getCoordinates());
+        moveRecord.add(oldAttackPiece.getName()+ "\r"+oldAttackPiece.isFirstMove() + "\r" + oldAttackPiece.getCoordinates() + "\r" + "eat" + "\r" + sacrificePiece.getName() + "\r"+sacrificePiece.isFirstMove()+ "\r" + sacrificePiece.getCoordinates());
         Log.d(TAG, moveRecord.getLast());
     }
 
@@ -223,21 +221,21 @@ public  void afterMove(String lastAction){
     Piece lastMovedPiece = pieces.get(pieces.size() - 1);
 
     if (!isCheck || !lastMovedPiece.getColorOfPiece().equals(checkColor)) {
-        switch (lastAction) {
+     /*   switch (history[3]) {
             case ("move"):
                 MainActivity.coor.setText(String.format("%s%s-%s", adapterPieceNames(bufferPiece.getName()), bufferPiece.getCoordinates(), lastMovedPiece.getCoordinates()));
                 break;
             case ("eat"):
                 MainActivity.coor.setText(String.format("%s%sx%s", adapterPieceNames(lastMovedPiece.getName()), bufferPiece.getCoordinates(), lastMovedPiece.getCoordinates()));
                 break;
-        }
+        }*/
         lastMovedPiece.setFirstMove(false);
         MainActivity.coor.setText("");
         isWhiteMoving = !isWhiteMoving;
     }
 
     if (isCheck && lastMovedPiece.getColorOfPiece().equals(checkColor)) {
-        switch (history[2]) {
+        switch (history[3]) {
             case ("move"):
                 makeBackMove(bufferPiece, lastMovedPiece);
                 break;
