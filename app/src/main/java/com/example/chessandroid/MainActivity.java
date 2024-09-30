@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 
+import android.util.Log;
 import android.view.MotionEvent;
 
 import android.view.View;
@@ -23,7 +24,7 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity {
 
 
-    FloatingActionButton reloadButton, invertButton, back;
+    FloatingActionButton reloadButton, invertButton, back, checkmate_But, save_but;
     @SuppressLint("StaticFieldLeak")
     static TextView coor, move, checkmate;
     static Board board;
@@ -63,6 +64,21 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        checkmate_But = findViewById(R.id.checkmate_btn);
+        checkmate_But.setOnClickListener(v -> {
+            long startTime = System.currentTimeMillis();
+                board.checkMate();
+            long endTime = System.currentTimeMillis();
+            coor.setText(String.format("%s", endTime-startTime));
+
+        });
+
+        save_but = findViewById(R.id.save_btn);
+        save_but.setOnClickListener(v -> {
+           for(Piece piece: Board.pieces){
+               Log.d(TAG, piece.toString());
+           }
+        });
     }
 
 
