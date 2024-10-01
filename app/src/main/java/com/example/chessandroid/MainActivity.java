@@ -58,26 +58,26 @@ public class MainActivity extends AppCompatActivity {
 
         back = findViewById(R.id.back_btn);
         back.setOnClickListener(v -> {
-            if (!Board.moveRecord.isEmpty()) {
-                board.makeBackMoveByRecord(Board.moveRecord.getLast());
-                Board.moveRecord.removeLast();
+            if (!Board.history.isEmpty()) {
+                board.makeBackMoveByRecord(Board.history.getLast());
+                Board.history.removeLast();
             }
         });
 
         checkmate_But = findViewById(R.id.checkmate_btn);
         checkmate_But.setOnClickListener(v -> {
-            long startTime = System.currentTimeMillis();
-                board.checkMate();
-            long endTime = System.currentTimeMillis();
-            coor.setText(String.format("%s", endTime-startTime));
-
+            int sum=0;
+            for (int time:Board.timeDrawMoves) {
+               sum+=time;
+            }
+           // Log.d(TAG, "Среднее время отрисовки ходов = "+sum/Board.timeDrawMoves.size()+",    "+Board.timeDrawMoves.size());
         });
 
         save_but = findViewById(R.id.save_btn);
         save_but.setOnClickListener(v -> {
-           for(Piece piece: Board.pieces){
+          /* for(Piece piece: Board.pieces){
                Log.d(TAG, piece.toString());
-           }
+           }*/
         });
     }
 

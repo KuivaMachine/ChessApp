@@ -1,5 +1,5 @@
 package com.example.chessandroid.enums;
 
 public enum ColorOfPiece {
-    WHITE, BLACK
+    WHITE, BLACK, TEST
 }

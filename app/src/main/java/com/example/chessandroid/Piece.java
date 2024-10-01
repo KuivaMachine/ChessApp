@@ -61,7 +61,7 @@ public class Piece {
     public String toString() {
        // pieces.add(new Piece("King Black", new Coordinate(5, 8), ColorOfPiece.BLACK, true));
         //pieces.add(new Piece(Pawn White, new Coordinate(4,4),WHITE,false
-        return "pieces.add(new Piece(\""+name + "\", new Coordinate(" + coordinates.letter+","+coordinates.number + "), ColorOfPiece." + colorOfPiece+","+isFirstMove()+"));";
+        return "pieces.add(new Piece(\""+name + "\", new Coordinate(" + coordinates.getLetter()+","+coordinates.getNumber() + "), ColorOfPiece." + colorOfPiece+","+isFirstMove()+"));\n";
     }
 
 }

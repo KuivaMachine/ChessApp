@@ -5,8 +5,8 @@ import java.util.Objects;
 
 public class Coordinate {
 
-    int letter;
-    int number;
+    private int letter;
+    private int number;
 
     public Coordinate(int letter, int number) {
         this.letter = letter;
