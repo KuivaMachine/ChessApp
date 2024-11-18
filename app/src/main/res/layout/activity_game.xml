@@ -6,37 +6,43 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#2B2B2B"
-    tools:context=".MainActivity">
+    tools:context=".ChessGame.GameActivity">
 
 
     <TextView
-        android:id="@+id/coor"
+        android:id="@+id/countB"
         android:gravity="center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="50dp"
+        android:layout_marginTop="40dp"
         android:elevation="20dp"
-        android:hint="Coordinates"
         android:textColor="#C6C6C6"
         android:textColorHint="#C6C6C6"
         android:textSize="40sp"
         app:layout_constraintEnd_toEndOf="parent"
-
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+    <TextView
+        android:id="@+id/countW"
+        android:gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:elevation="20dp"
+        android:textColor="#C6C6C6"
+        android:textColorHint="#C6C6C6"
+        android:textSize="40sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/countB" />
 
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-
-        android:layout_marginTop="150dp"
+        android:layout_height="match_parent"
         android:gravity="center"
         android:orientation="horizontal"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <com.example.chessandroid.Board
+        <com.example.chessandroid.ChessGame.Board
             android:id="@+id/board_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -49,7 +55,6 @@
         android:id="@+id/back_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-
         android:layout_marginBottom="60dp"
         android:backgroundTint="@color/biege"
         android:clickable="true"
@@ -62,7 +67,20 @@
         android:id="@+id/checkmate_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
+        android:layout_marginStart="30dp"
+        android:backgroundTint="@color/biege"
+        android:clickable="true"
+        android:contentDescription="TODO"
+        app:layout_constraintTop_toTopOf="@+id/back_btn"
+        app:layout_constraintBottom_toBottomOf="@+id/back_btn"
+        app:layout_constraintStart_toEndOf="@+id/forward_btn"
+        app:rippleColor="@color/white"
+        app:srcCompat="@drawable/iconchess" />
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/forward_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
         android:backgroundTint="@color/biege"
         android:clickable="true"
         android:contentDescription="TODO"
@@ -70,7 +88,7 @@
         app:layout_constraintBottom_toBottomOf="@+id/back_btn"
         app:layout_constraintStart_toEndOf="@+id/back_btn"
         app:rippleColor="@color/white"
-        app:srcCompat="@drawable/iconchess" />
+        app:srcCompat="@drawable/forward_btn" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/save_btn"

@@ -1,5 +1,8 @@
-package com.example.chessandroid;
+package com.example.chessandroid.ChessGame;
 
+import com.google.firebase.database.IgnoreExtraProperties;
+
+@IgnoreExtraProperties
 public class History {
     private String action;
     private Piece from;
@@ -9,6 +12,9 @@ public class History {
         this.action = action;
         this.from = from;
         this.to = to;
+    }
+
+    public History() {
     }
 
     public String getAction(){
@@ -21,5 +27,10 @@ public class History {
 
     public Piece getTo() {
         return to;
+    }
+
+    @Override
+    public String toString() {
+        return from + " " + action  + " "  + to ;
     }
 }

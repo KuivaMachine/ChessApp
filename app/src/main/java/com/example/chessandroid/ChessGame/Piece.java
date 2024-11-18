@@ -1,4 +1,4 @@
-package com.example.chessandroid;
+package com.example.chessandroid.ChessGame;
 
 import com.example.chessandroid.enums.ColorOfPiece;
 
@@ -19,21 +19,13 @@ public class Piece {
         return name;
     }
 
-    Coordinate coordinates;
-    String name;
-    ColorOfPiece colorOfPiece;
-    boolean firstMove;
-
-    public void setColorOfPiece(ColorOfPiece colorOfPiece) {
-        this.colorOfPiece = colorOfPiece;
-    }
+    private Coordinate coordinates;
+    private String name;
+    private ColorOfPiece colorOfPiece;
+    private boolean firstMove;
 
     public ColorOfPiece getColorOfPiece() {
         return colorOfPiece;
-    }
-
-    public void setFirstMove(boolean firstMove) {
-        this.firstMove = firstMove;
     }
 
     public boolean isFirstMove() {
@@ -59,9 +51,9 @@ public class Piece {
 
     @Override
     public String toString() {
-       // pieces.add(new Piece("King Black", new Coordinate(5, 8), ColorOfPiece.BLACK, true));
-        //pieces.add(new Piece(Pawn White, new Coordinate(4,4),WHITE,false
-        return "pieces.add(new Piece(\""+name + "\", new Coordinate(" + coordinates.getLetter()+","+coordinates.getNumber() + "), ColorOfPiece." + colorOfPiece+","+isFirstMove()+"));\n";
+
+        //return "pieces.add(new Piece(\""+name + "\", new Coordinate(" + coordinates.getLetter()+","+coordinates.getNumber() + "), ColorOfPiece." + colorOfPiece+","+isFirstMove()+"));\n";
+        return name + " " + coordinates;
     }
 
 }

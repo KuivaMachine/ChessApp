@@ -1,4 +1,4 @@
-package com.example.chessandroid;
+package com.example.chessandroid.ChessGame;
 
 import android.content.Context;
 import android.graphics.BitmapFactory;
@@ -6,14 +6,29 @@ import android.graphics.Bitmap;
 import android.view.View;
 
 
+import com.example.chessandroid.R;
+
 import java.util.HashMap;
 
 
 public class Bitmaps extends View {
     static HashMap<String, Bitmap> listOfPiecesAndPNG = new HashMap<>();
+    static HashMap<String, Bitmap> listOfTakenPiecesAndPNG = new HashMap<>();
     static HashMap<String, String> colors = new HashMap<>();
+
     public Bitmaps(Context context) {
         super(context);
+
+        listOfTakenPiecesAndPNG.put("Queen White", BitmapFactory.decodeResource(getResources(), R.drawable.queen_white_taken));
+        listOfTakenPiecesAndPNG.put("Queen Black", BitmapFactory.decodeResource(getResources(), R.drawable.queen_black_taken));
+        listOfTakenPiecesAndPNG.put("Rook White", BitmapFactory.decodeResource(getResources(), R.drawable.rook_white_taken));
+        listOfTakenPiecesAndPNG.put("Rook Black", BitmapFactory.decodeResource(getResources(), R.drawable.rook_black_taken));
+        listOfTakenPiecesAndPNG.put("Knight White", BitmapFactory.decodeResource(getResources(), R.drawable.knight_white_taken));
+        listOfTakenPiecesAndPNG.put("Knight Black", BitmapFactory.decodeResource(getResources(), R.drawable.knight_black_taken));
+        listOfTakenPiecesAndPNG.put("Bishop White", BitmapFactory.decodeResource(getResources(), R.drawable.bishop_white_taken));
+        listOfTakenPiecesAndPNG.put("Bishop Black", BitmapFactory.decodeResource(getResources(), R.drawable.bishop_black_taken));
+        listOfTakenPiecesAndPNG.put("Pawn White", BitmapFactory.decodeResource(getResources(), R.drawable.pawn_white_taken));
+        listOfTakenPiecesAndPNG.put("Pawn Black", BitmapFactory.decodeResource(getResources(), R.drawable.pawn_black_taken));
 
 
         switch (Board.INDEX_OF_COLOR) {
@@ -73,6 +88,7 @@ public class Bitmaps extends View {
                 colors.put("Второй цвет клетки", "#FEFFE3");
                 colors.put("Цвет выделения свободного хода", "#999999");
                 break;
+
         }
     }
 

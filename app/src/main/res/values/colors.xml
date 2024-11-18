@@ -4,7 +4,8 @@
     <color name="white">#FFFFFFFF</color>
     <color name="biegeLL">#FFE9BC</color>
     <color name="biegeL">#FFE1A2</color>
-    <color name="biege">#FFD06F</color>
+    <color name="biege">#4B4B4B</color>
     <color name="biegeD">#FFBA2F</color>
+    <color name="blue">#2A3CFC</color>
     <color name="biegeDD">#FFAB00</color>
 </resources>

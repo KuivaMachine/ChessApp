@@ -1,12 +1,17 @@
-package com.example.chessandroid;
+package com.example.chessandroid.ChessGame;
 
+
+import com.google.firebase.database.IgnoreExtraProperties;
 
 import java.util.Objects;
-
+@IgnoreExtraProperties
 public class Coordinate {
 
     private int letter;
     private int number;
+
+    public Coordinate() {
+    }
 
     public Coordinate(int letter, int number) {
         this.letter = letter;

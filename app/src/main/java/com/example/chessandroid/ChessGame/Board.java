@@ -1,12 +1,15 @@
-package com.example.chessandroid;
+package com.example.chessandroid.ChessGame;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.graphics.Shader;
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -19,55 +22,67 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.Objects;
 
 
+//TODO: сохранение взятых фигур
 //TODO: Рокировка (castling)
 //TODO: Взятие на проходе (en passant)
 //TODO: Превращение пешки (promotion)
 //TODO: буквы и цифры
-//TODO: сохранение взятых фигур
 //TODO: пат и ничья (stalemate and draw)
 
 public class Board extends View {
+
     Piece bufferPiece = new Piece();
     Piece testPiece = new Piece("EmptyPlace", new Coordinate(8, 8), ColorOfPiece.TEST, false);
-    Paint paint = new Paint();
+
+
 
     //ПЕРЕМЕННЫЕ
+
     final private String TAG = "MainActivity";
     float scaleFactor = 1f;                   //коэффициент размера доски
     float chessBoardSize;                       //размер всей доски
     int squareSide;                         //размер квадрата
     float defY;                          //координата У для начала отсчета доски
     float defX;                            //координата Х для начала отсчета доски
-    float radius0fFreeMovePoint = 15;    //радиус точки, указывающей на доступные ходы
+    float radius0fFreeMovePoint = 18;    //радиус точки, указывающей на доступные ходы
     float indent = 5;                   //размер отступа внутри клетки до фигуры
     static int INDEX_OF_COLOR = 3;          //вариант дизайна фигур
     static boolean isWhiteMoving;       //проверка на очередность ходов
     static boolean isInvertedBoard = false; //проверка, является ли доска инвертированной
-    static boolean isCheck = false;         //флаг шаха
-    static boolean isCheckMate = false;         //флаг мата
-    static boolean isCheckTheWhite = false;         //шах белому королю
-    static boolean isCheckTheBlack = false;         //шах черному королю
+    static boolean isCheck;         //флаг шаха
+    static boolean isCheckMate;         //флаг мата
+    static boolean isCheckTheWhite;         //шах белому королю
+    static boolean isCheckTheBlack;         //шах черному королю
+    static String checkmate = "";
+    static String move="";
     ColorOfPiece checkColor;                    //цвет фигуры, которой шах
-
 
     //МАССИВЫ И ЛИСТЫ
     static ArrayList<Integer> timeDrawMoves = new ArrayList<>();
     static ArrayList<Piece> pieces = new ArrayList<>();
+    static ArrayList<Piece> takenPiecesWhite = new ArrayList<>();
+    static ArrayList<Piece> takenPiecesBlack = new ArrayList<>();
     static LinkedHashMap<Coordinate, RectF> squares = new LinkedHashMap<>();
+
+    static LinkedHashMap<Coordinate, RectF> takenPiecesRects = new LinkedHashMap<>();
+
     static HashSet<Coordinate> allowedMovesList = new HashSet<>();
-    static HashSet<Coordinate> BUSY_COORDINATES = new HashSet<>();
+    static HashSet<Coordinate> busyCoordinates = new HashSet<>();
     static LinkedList<History> history = new LinkedList<>();
+    static LinkedList<History> movesBuffer = new LinkedList<>();
     HashMap<String, Bitmap> listOfPiecesAndPNG = Bitmaps.listOfPiecesAndPNG;
+    HashMap<String, Bitmap> listOfTakenPiecesAndPNG = Bitmaps.listOfTakenPiecesAndPNG;
     HashMap<String, String> colors = Bitmaps.colors;
 
     public Board(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
         makeDefaultPlacement();
+
         new Bitmaps(this.getContext());
     }
-
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -93,17 +108,17 @@ public class Board extends View {
                 if (isPieceAtCoordinates(currentCoor) && canMoveThere(currentCoor)) {
                     Piece sacrificePiece = getPieceAtCoordinates(currentCoor);
                     eatThePiece(bufferPiece, sacrificePiece);
+                    addTakenPiece(sacrificePiece);
                     history.add(new History(bufferPiece, "eat", sacrificePiece));
-                    check();
-                    afterMove(history.getLast());
-
+                    afterMove();
+                    movesBuffer.clear();
                 }
                 if (!isPieceAtCoordinates(currentCoor) && canMoveThere(currentCoor)) {
                     Piece gotoPiece = new Piece(bufferPiece.getName(), currentCoor, bufferPiece.getColorOfPiece(), false);
                     makeMove(bufferPiece, gotoPiece);
                     history.add(new History(bufferPiece, "move", gotoPiece));
-                    check();
-                    afterMove(history.getLast());
+                    afterMove();
+                    movesBuffer.clear();
                 }
                 if (!isPieceAtCoordinates(currentCoor)) {
                     allowedMovesList.clear();
@@ -114,43 +129,46 @@ public class Board extends View {
         return true;
     }
 
-    private static void fillBusyCoordinatesList() {
-        BUSY_COORDINATES.clear();
-        for (Piece piece : pieces) {
-            BUSY_COORDINATES.add(piece.getCoordinates());
-        }
-    }
-
-    private boolean isPieceAtCoordinates(Coordinate coordinate) {     //проверяет стоит ли на указанном по координатам квадрате фигура
-        return BUSY_COORDINATES.contains(coordinate);
-        /*for (Piece i : pieces) {
-            if (i.getCoordinates().equals(coordinate)) {
-                return true;
-            }
-        }
-
-        return false;*/
-    }
-
-    public void makeBackMoveByRecord(History history) {
-
-        switch (history.getAction()) {
+    public void makeBackMoveByHistory(History lastAction) {
+        switch (lastAction.getAction()) {
             case ("move"):
-                Piece from = history.getFrom();
-                Piece to = history.getTo();
+                Piece from = lastAction.getFrom();
+                Piece to = lastAction.getTo();
                 makeBackMove(from, to);
                 break;
 
             case ("eat"):
-                Piece attackPiece = history.getFrom();
-                Piece sacrificePiece = history.getTo();
+                Piece attackPiece = lastAction.getFrom();
+                Piece sacrificePiece = lastAction.getTo();
                 makeBackEat(attackPiece, sacrificePiece);
+                if(sacrificePiece.getColorOfPiece().equals(ColorOfPiece.WHITE)){
+                    takenPiecesWhite.remove(takenPiecesWhite.size()-1);
+                }else{
+                    takenPiecesBlack.remove(takenPiecesBlack.size()-1);
+                }
                 break;
         }
-        check();
-        isWhiteMoving = !isWhiteMoving;
-        allowedMovesList.clear();
-        MainActivity.checkmate.setText("");
+
+        afterMove();
+    }
+
+    public void makeForwardMoveByHistory(History lastAction) {
+
+        switch (lastAction.getAction()) {
+            case ("move"):
+                Piece from = lastAction.getFrom();
+                Piece to = lastAction.getTo();
+                makeMove(from, to);
+                break;
+
+            case ("eat"):
+                Piece attackPiece = lastAction.getFrom();
+                Piece sacrificePiece = lastAction.getTo();
+                eatThePiece(attackPiece, sacrificePiece);
+                addTakenPiece(sacrificePiece);
+                break;
+        }
+        afterMove();
     }
 
     private void makeMove(Piece fromPiece, Piece gotoPiece) {
@@ -168,11 +186,91 @@ public class Board extends View {
 
     private void eatThePiece(Piece oldAttackPiece, Piece sacrificePiece) {
         Piece newAttackPiece = new Piece(oldAttackPiece.getName(), sacrificePiece.getCoordinates(), oldAttackPiece.getColorOfPiece(), false);
-
         pieces.remove(oldAttackPiece);
         pieces.remove(sacrificePiece);
         pieces.add(newAttackPiece);
         fillBusyCoordinatesList();
+    }
+
+    private void addTakenPiece(Piece piece) {
+
+        if (piece.getColorOfPiece().equals(ColorOfPiece.BLACK)) {
+
+            if (piece.getName().equals("Pawn Black") ) {
+                for (int i = 1; i < 9; i++) {
+                    if (!isTakenPieceAtCoordinates(new Coordinate(9, i))) {
+                        takenPiecesBlack.add(new Piece(piece.getName(), new Coordinate(9, i), ColorOfPiece.BLACK, false));
+                        break;
+                    }
+                }
+            }
+            if (piece.getName().equals("Queen Black") ) {
+                takenPiecesBlack.add(new Piece(piece.getName(), new Coordinate(10, 4), ColorOfPiece.BLACK, false));
+            }
+
+            if (Objects.equals(piece.getName(), "Rook Black")) {
+                if (!isTakenPieceAtCoordinates(new Coordinate(10, 1))) {
+                    takenPiecesBlack.add(new Piece(piece.getName(), new Coordinate(10, 1), ColorOfPiece.BLACK, false));
+                } else {
+                    takenPiecesBlack.add(new Piece(piece.getName(), new Coordinate(10, 7), ColorOfPiece.BLACK, false));
+                }
+            }
+            if (Objects.equals(piece.getName(), "Bishop Black")) {
+                if (!isTakenPieceAtCoordinates(new Coordinate(10, 3))) {
+                    takenPiecesBlack.add(new Piece(piece.getName(), new Coordinate(10, 3), ColorOfPiece.BLACK, false));
+                } else {
+                    takenPiecesBlack.add(new Piece(piece.getName(), new Coordinate(10, 5), ColorOfPiece.BLACK, false));
+                }
+            }
+            if (Objects.equals(piece.getName(), "Knight Black")) {
+                if (!isTakenPieceAtCoordinates(new Coordinate(10, 2))) {
+                    takenPiecesBlack.add(new Piece(piece.getName(), new Coordinate(10, 2), ColorOfPiece.BLACK, false));
+                } else {
+                    takenPiecesBlack.add(new Piece(piece.getName(), new Coordinate(10, 6), ColorOfPiece.BLACK, false));
+                }
+            }
+
+
+        }
+
+        if (piece.getColorOfPiece().equals(ColorOfPiece.WHITE)) {
+
+            if (Objects.equals(piece.getName(), "Pawn White")) {
+                for (int i = 1; i < 9; i++) {
+                    if (!isTakenPieceAtCoordinates(new Coordinate(11, i))) {
+                        takenPiecesWhite.add(new Piece(piece.getName(), new Coordinate(11, i), ColorOfPiece.WHITE, false));
+                        break;
+                    }
+                }
+            }
+            if (Objects.equals(piece.getName(), "Queen White")) {
+                takenPiecesWhite.add(new Piece(piece.getName(), new Coordinate(12, 4), ColorOfPiece.WHITE, false));
+            }
+
+            if (Objects.equals(piece.getName(), "Rook White")) {
+                if (!isTakenPieceAtCoordinates(new Coordinate(12, 1))) {
+                    takenPiecesWhite.add(new Piece(piece.getName(), new Coordinate(12, 1), ColorOfPiece.WHITE, false));
+                } else {
+                    takenPiecesWhite.add(new Piece(piece.getName(), new Coordinate(12, 7), ColorOfPiece.WHITE, false));
+                }
+            }
+            if (Objects.equals(piece.getName(), "Bishop White")) {
+                if (!isTakenPieceAtCoordinates(new Coordinate(12, 3))) {
+                    takenPiecesWhite.add(new Piece(piece.getName(), new Coordinate(12, 3), ColorOfPiece.WHITE, false));
+                } else {
+                    takenPiecesWhite.add(new Piece(piece.getName(), new Coordinate(12, 5), ColorOfPiece.WHITE, false));
+                }
+            }
+            if (Objects.equals(piece.getName(), "Knight White")) {
+                if (!isTakenPieceAtCoordinates(new Coordinate(12, 2))) {
+                    takenPiecesWhite.add(new Piece(piece.getName(), new Coordinate(12, 2), ColorOfPiece.WHITE, false));
+                } else {
+                    takenPiecesWhite.add(new Piece(piece.getName(), new Coordinate(12, 6), ColorOfPiece.WHITE, false));
+                }
+            }
+
+
+        }
     }
 
     public void makeBackEat(Piece oldAttackPiece, Piece sacrificePiece) {
@@ -182,6 +280,64 @@ public class Board extends View {
         pieces.add(oldAttackPiece);
         pieces.add(sacrificePiece);
         fillBusyCoordinatesList();
+    }
+
+    public void afterMove() {
+        isCheckMate = false;
+        check();
+        isWhiteMoving = !isWhiteMoving;
+        allowedMovesList.clear();
+        setCheckText(isCheck);                              //пишет когда кому шах
+        if (isCheck) {
+            checkMate();
+        }
+        setCheckMateText(isCheckMate);
+        setCountText();
+        invalidate();
+    }
+
+    private static void setCountText() {
+      /*  int scoreWhite = 0;
+        int scoreBlack = 0;
+        for (Piece piece : takenPiecesWhite) {
+            if (piece.getName() == "Pawn White") {
+                scoreBlack++;
+            }
+            if (piece.getName() == "Knight White" || piece.getName() == "Bishop White") {
+                scoreBlack += 3;
+            }
+            if (piece.getName() == "Rook White") {
+                scoreBlack += 5;
+            }
+            if (piece.getName() == "Queen White") {
+                scoreBlack += 9;
+            }
+        }
+
+        for (Piece piece : takenPiecesBlack) {
+            if (piece.getName() == "Pawn Black") {
+                scoreWhite++;
+            }
+            if (piece.getName() == "Knight Black" || piece.getName() == "Bishop Black") {
+                scoreWhite += 3;
+            }
+            if (piece.getName() == "Rook Black") {
+                scoreWhite += 5;
+            }
+            if (piece.getName() == "Queen Black") {
+                scoreWhite += 9;
+            }
+        }
+       MainActivity.countW.setText(String.format("+%d", scoreWhite - scoreBlack));
+         if (scoreWhite - scoreBlack <= 0) {
+            MainActivity.countW.setText("");
+        }
+        MainActivity.countB.setText(String.format("+%d", scoreBlack - scoreWhite));
+        if (scoreBlack - scoreWhite <= 0) {
+            MainActivity.countB.setText("");
+        }
+
+*/
     }
 
     private void check() {
@@ -268,33 +424,23 @@ public class Board extends View {
         }
     }
 
-    public void afterMove(History lastAction) {
-        isWhiteMoving = !isWhiteMoving;
-        allowedMovesList.clear();
-        setCheckText(isCheck);                              //пишет когда кому шах
-        if (isCheck) {
-            checkMate();
-        }
-        setCheckMateText(isCheckMate);
-    }
 
     public void writeWhoIsMove() {//ПИШЕТ КОГДА ЧЕЙ ХОД
         if (isWhiteMoving) {
-            MainActivity.move.setText(String.format("%s", "Белые ходят"));
+            move=("Белые ходят");
         } else {
-            MainActivity.move.setText(String.format("%s", "Черные ходят"));
+            move=("Черные ходят");
         }
     }
 
     private void setCheckMateText(boolean isCheckMate) {
         if (isCheckMate) {
             if (!isCheckTheWhite) {
-                MainActivity.checkmate.setText(String.format("%s", "Мат черным!"));
+                checkmate="Мат черным!";
             }
             if (isCheckTheWhite) {
-                MainActivity.checkmate.setText(String.format("%s", "Мат белым!"));
+                checkmate=("Мат белым!");
             }
-            MainActivity.move.setText(String.format("%s", "Пиздец"));
         }
     }
 
@@ -302,25 +448,27 @@ public class Board extends View {
         if (isCheck) {
 
             if (!isCheckTheWhite) {
-                MainActivity.checkmate.setText(String.format("%s", "Шах черным!"));
+               checkmate=("Шах черным!");
             }
             if (isCheckTheWhite) {
-                MainActivity.checkmate.setText(String.format("%s", "Шах белым!"));
+                checkmate=("Шах белым!");
             }
-        } else {
-            MainActivity.checkmate.setText("");
         }
     }
 
     public static void makeDefaultPlacement() { //УСТАНАВЛИВАЕТ НАЧАЛЬНУЮ РАССТАНОВКУ ФИГУР
         pieces.clear();
+        takenPiecesWhite.clear();
+        takenPiecesBlack.clear();
+        movesBuffer.clear();
         allowedMovesList.clear();
         history.clear();
-        isWhiteMoving = true;
+        //isWhiteMoving = true;
         isCheck = false;
+        isCheckMate = false;
 
 
-       /* pieces.add(new Piece("King Black", new Coordinate(5, 8), ColorOfPiece.BLACK, true));
+        pieces.add(new Piece("King Black", new Coordinate(5, 8), ColorOfPiece.BLACK, true));
         pieces.add(new Piece("Queen Black", new Coordinate(4, 8), ColorOfPiece.BLACK, true));
         pieces.add(new Piece("Rook Black", new Coordinate(1, 8), ColorOfPiece.BLACK, true));
         pieces.add(new Piece("Rook Black", new Coordinate(8, 8), ColorOfPiece.BLACK, true));
@@ -341,7 +489,7 @@ public class Board extends View {
         for (int i = 1; i <= 8; i++) {
             pieces.add(new Piece("Pawn Black", new Coordinate(i, 7), ColorOfPiece.BLACK, true));
             pieces.add(new Piece("Pawn White", new Coordinate(i, 2), ColorOfPiece.WHITE, true));
-        }*/
+        }
 
 //        pieces.add(new Piece("Pawn White", new Coordinate(4, 4), ColorOfPiece.WHITE, false));
 //         pieces.add(new Piece("Queen Black", new Coordinate(3, 3), ColorOfPiece.BLACK, false));
@@ -355,49 +503,248 @@ public class Board extends View {
 //        pieces.add(new Piece("King White", new Coordinate(5, 1), ColorOfPiece.WHITE, true));
 
         //ПАРТИЯ
-        pieces.add(new Piece("King Black", new Coordinate(5, 8), ColorOfPiece.BLACK, true));
-        pieces.add(new Piece("Rook Black", new Coordinate(1, 8), ColorOfPiece.BLACK, true));
-        pieces.add(new Piece("Rook Black", new Coordinate(8, 8), ColorOfPiece.BLACK, true));
-        pieces.add(new Piece("Knight Black", new Coordinate(2, 8), ColorOfPiece.BLACK, true));
-        pieces.add(new Piece("Pawn Black", new Coordinate(1, 7), ColorOfPiece.BLACK, true));
-        pieces.add(new Piece("Pawn Black", new Coordinate(2, 7), ColorOfPiece.BLACK, true));
-        pieces.add(new Piece("Pawn Black", new Coordinate(3, 7), ColorOfPiece.BLACK, true));
-        pieces.add(new Piece("Pawn White", new Coordinate(3, 2), ColorOfPiece.WHITE, true));
-        pieces.add(new Piece("Pawn Black", new Coordinate(7, 7), ColorOfPiece.BLACK, true));
-        pieces.add(new Piece("Pawn Black", new Coordinate(8, 7), ColorOfPiece.BLACK, true));
-        pieces.add(new Piece("Bishop Black", new Coordinate(6, 5), ColorOfPiece.BLACK, false));
-        pieces.add(new Piece("King White", new Coordinate(5, 1), ColorOfPiece.WHITE, true));
-        pieces.add(new Piece("Pawn White", new Coordinate(1, 2), ColorOfPiece.WHITE, true));
-        pieces.add(new Piece("Pawn White", new Coordinate(7, 2), ColorOfPiece.WHITE, true));
-        pieces.add(new Piece("Pawn White", new Coordinate(4, 4), ColorOfPiece.WHITE, false));
-        pieces.add(new Piece("Queen Black", new Coordinate(3, 3), ColorOfPiece.BLACK, false));
-        pieces.add(new Piece("Pawn Black", new Coordinate(5, 4), ColorOfPiece.BLACK, false));
-        pieces.add(new Piece("Pawn Black", new Coordinate(5, 5), ColorOfPiece.BLACK, false));
-        pieces.add(new Piece("Bishop White", new Coordinate(3, 4), ColorOfPiece.WHITE, false));
-        pieces.add(new Piece("Bishop Black", new Coordinate(2, 4), ColorOfPiece.BLACK, false));
-        pieces.add(new Piece("Bishop White", new Coordinate(4, 2), ColorOfPiece.WHITE, false));
-        pieces.add(new Piece("Queen White", new Coordinate(5, 2), ColorOfPiece.WHITE, false));
-        pieces.add(new Piece("Knight Black", new Coordinate(8, 2), ColorOfPiece.BLACK, false));
-        pieces.add(new Piece("Pawn Black", new Coordinate(6, 7), ColorOfPiece.BLACK, true));
-        pieces.add(new Piece("Pawn White", new Coordinate(6, 3), ColorOfPiece.WHITE, false));
-        pieces.add(new Piece("Knight White", new Coordinate(6, 2), ColorOfPiece.WHITE, false));
-        pieces.add(new Piece("Rook White", new Coordinate(6, 1), ColorOfPiece.WHITE, false));
-        pieces.add(new Piece("Rook White", new Coordinate(3, 1), ColorOfPiece.WHITE, false));
+//        pieces.add(new Piece("King Black", new Coordinate(5, 8), ColorOfPiece.BLACK, true));
+//        pieces.add(new Piece("Rook Black", new Coordinate(1, 8), ColorOfPiece.BLACK, true));
+//        pieces.add(new Piece("Rook Black", new Coordinate(8, 8), ColorOfPiece.BLACK, true));
+//        pieces.add(new Piece("Knight Black", new Coordinate(2, 8), ColorOfPiece.BLACK, true));
+//        pieces.add(new Piece("Pawn Black", new Coordinate(1, 7), ColorOfPiece.BLACK, true));
+//        pieces.add(new Piece("Pawn Black", new Coordinate(2, 7), ColorOfPiece.BLACK, true));
+//        pieces.add(new Piece("Pawn Black", new Coordinate(3, 7), ColorOfPiece.BLACK, true));
+//        pieces.add(new Piece("Pawn White", new Coordinate(3, 2), ColorOfPiece.WHITE, true));
+//        pieces.add(new Piece("Pawn Black", new Coordinate(7, 7), ColorOfPiece.BLACK, true));
+//        pieces.add(new Piece("Pawn Black", new Coordinate(8, 7), ColorOfPiece.BLACK, true));
+//        pieces.add(new Piece("Bishop Black", new Coordinate(6, 5), ColorOfPiece.BLACK, false));
+//        pieces.add(new Piece("King White", new Coordinate(5, 1), ColorOfPiece.WHITE, true));
+//        pieces.add(new Piece("Pawn White", new Coordinate(1, 2), ColorOfPiece.WHITE, true));
+//        pieces.add(new Piece("Pawn White", new Coordinate(7, 2), ColorOfPiece.WHITE, true));
+//        pieces.add(new Piece("Pawn White", new Coordinate(4, 4), ColorOfPiece.WHITE, false));
+//        pieces.add(new Piece("Queen Black", new Coordinate(3, 3), ColorOfPiece.BLACK, false));
+//        pieces.add(new Piece("Pawn Black", new Coordinate(5, 4), ColorOfPiece.BLACK, false));
+//        pieces.add(new Piece("Pawn Black", new Coordinate(5, 5), ColorOfPiece.BLACK, false));
+//        pieces.add(new Piece("Bishop White", new Coordinate(3, 4), ColorOfPiece.WHITE, false));
+//        pieces.add(new Piece("Bishop Black", new Coordinate(2, 4), ColorOfPiece.BLACK, false));
+//        pieces.add(new Piece("Bishop White", new Coordinate(4, 2), ColorOfPiece.WHITE, false));
+//        pieces.add(new Piece("Queen White", new Coordinate(5, 2), ColorOfPiece.WHITE, false));
+//        pieces.add(new Piece("Knight Black", new Coordinate(8, 2), ColorOfPiece.BLACK, false));
+//        pieces.add(new Piece("Pawn Black", new Coordinate(6, 7), ColorOfPiece.BLACK, true));
+//        pieces.add(new Piece("Pawn White", new Coordinate(6, 3), ColorOfPiece.WHITE, false));
+//        pieces.add(new Piece("Knight White", new Coordinate(6, 2), ColorOfPiece.WHITE, false));
+//        pieces.add(new Piece("Rook White", new Coordinate(6, 1), ColorOfPiece.WHITE, false));
+//        pieces.add(new Piece("Rook White", new Coordinate(3, 1), ColorOfPiece.WHITE, false));
+
+
+      /*  takenPieces.add(new Piece("Queen Black", new Coordinate(10, 4), ColorOfPiece.BLACK, false));
+        takenPieces.add(new Piece("Rook Black", new Coordinate(10, 1), ColorOfPiece.BLACK, false));
+        takenPieces.add(new Piece("Rook Black", new Coordinate(10, 7), ColorOfPiece.BLACK, false));
+        takenPieces.add(new Piece("Knight Black", new Coordinate(10, 2), ColorOfPiece.BLACK, false));
+        takenPieces.add(new Piece("Knight Black", new Coordinate(10, 6), ColorOfPiece.BLACK, false));
+        takenPieces.add(new Piece("Bishop Black", new Coordinate(10, 3), ColorOfPiece.BLACK, false));
+        takenPieces.add(new Piece("Bishop Black", new Coordinate(10, 5), ColorOfPiece.BLACK, false));
+
+        takenPieces.add(new Piece("Queen White", new Coordinate(12, 4), ColorOfPiece.WHITE, false));
+        takenPieces.add(new Piece("Rook White", new Coordinate(12, 1), ColorOfPiece.WHITE, false));
+        takenPieces.add(new Piece("Rook White", new Coordinate(12, 7), ColorOfPiece.WHITE, false));
+        takenPieces.add(new Piece("Knight White", new Coordinate(12, 2), ColorOfPiece.WHITE, false));
+        takenPieces.add(new Piece("Knight White", new Coordinate(12, 6), ColorOfPiece.WHITE, false));
+        takenPieces.add(new Piece("Bishop White", new Coordinate(12, 3), ColorOfPiece.WHITE, false));
+        takenPieces.add(new Piece("Bishop White", new Coordinate(12, 5), ColorOfPiece.WHITE, false));
+        for (int i = 1; i <= 8; i++) {
+            takenPieces.add(new Piece("Pawn Black", new Coordinate(9, i), ColorOfPiece.BLACK, false));
+            takenPieces.add(new Piece("Pawn White", new Coordinate(11, i), ColorOfPiece.WHITE, false));
+        }*/
+
 
         fillBusyCoordinatesList();
     }
 
+    private static void fillBusyCoordinatesList() {
+        busyCoordinates.clear();
+        for (Piece piece : pieces) {
+            busyCoordinates.add(piece.getCoordinates());
+        }
+    }
+
+    private boolean isPieceAtCoordinates(Coordinate coordinate) {     //проверяет стоит ли фигура на указанном по координатам квадрате
+        return busyCoordinates.contains(coordinate);
+    }
+
+    private boolean isTakenPieceAtCoordinates(Coordinate coordinate) {     //проверяет стоит ли фигура на указанном по координатам квадрате
+        for (Piece piece : takenPiecesWhite) {
+            if (piece.getCoordinates().equals(coordinate)) {
+                return true;
+            }
+        }
+        for (Piece piece : takenPiecesBlack) {
+            if (piece.getCoordinates().equals(coordinate)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     @SuppressLint("DrawAllocation")
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        //canvas.drawARGB(80, 0, 0, 255);                //заполняет весь холст цветом
+        // canvas.drawARGB(80, 0, 0, 255);                //заполняет весь холст цветом
         drawChessBoard(canvas);                             //отрисовка доски
+        drawMarkup(canvas);
         drawPieces(canvas);                                 //отрисовка фигур
         lightAllowedMoves(canvas, allowedMovesList);     //отрисовка доступных ходов
         writeWhoIsMove();                                   //пишет чей ход
+        drawTakenWhitePieces(canvas);
+        drawTakenBlackPieces(canvas);
+        drawTakenPieces(canvas, takenPiecesWhite);
+        drawTakenPieces(canvas, takenPiecesBlack);
+
+    }
+
+
+
+    private void drawTakenWhitePieces(Canvas canvas) {
+
+        Paint paint = new Paint();
+        initialisationOfXY();
+
+        float startX = defX + squareSide - 60;
+        float startY = defY - squareSide;
+        float finishX = defX + chessBoardSize - squareSide - 80;
+        float finishY = startY + 30;
+
+
+        paint.setColor(Color.RED);
+
+        // paint.setAlpha(80);
+        //canvas.drawRect(defX, defY-(squareSide*2), defX+chessBoardSize, defY, paint);
+        paint.setColor(Color.GRAY);
+        // canvas.drawRect(defX+squareSide, defY-(squareSide*2), defX+chessBoardSize-squareSide, defY-squareSide, paint);
+
+        // defY = 455;
+        int gap = 3;
+        int gapOlderPieces = 10;
+        int pawnGap = 18;
+
+        float olderPiecesX = startX + 20;
+        float sqSide = squareSide - 20 * 2;
+        float olderPiecesY = startY - sqSide - 20;
+
+        float pawnPiecesX = startX + 50;
+        float pawnPiecesY = startY - sqSide + 15;
+        float sqSidePawn = squareSide - 25 * 2.6f;
+        float pawnGapX = pawnPiecesX + sqSidePawn;
+        float pawnGapY = pawnPiecesY;
+
+        paint.setShader(new LinearGradient(startX, startY, defX + chessBoardSize - squareSide, defY, Color.GRAY, Color.DKGRAY, Shader.TileMode.CLAMP));
+        canvas.drawRect(startX, startY, finishX, finishY, paint);
+
+        Paint paint1 = new Paint();
+        paint1.setStyle(Paint.Style.STROKE);
+        paint1.setStrokeWidth(4);
+        paint1.setColor(Color.BLACK);
+        canvas.drawRect(startX - gap, startY, finishX + gap, startY + 30, paint1);
+
+        canvas.drawLine(finishX + gap, startY, (finishX + gap) + 30, startY - 30, paint1);
+        canvas.drawLine(finishX + gap, startY + 30, (finishX + gap) + 30, startY, paint1);
+        canvas.drawLine(startX - gap, startY, (startX - gap) + 30, startY - 30, paint1);
+
+
+        Paint paint4 = new Paint();
+        Paint paint5 = new Paint();
+
+        paint5.setColor(Color.BLUE);
+        paint4.setColor(Color.GREEN);
+
+        paint4.setAlpha(80);
+        paint5.setAlpha(80);
+
+
+        for (int i = 0; i < 8; i++) {
+            RectF rectF = new RectF(pawnPiecesX + sqSidePawn * i + pawnGap * i, pawnPiecesY, pawnPiecesX + sqSidePawn * (i + 1) + pawnGap * i, pawnPiecesY + sqSidePawn);
+            // canvas.drawRect(rectF, paint4);
+            takenPiecesRects.put(new Coordinate(11, i + 1), rectF);
+            // canvas.drawRect(pawnPiecesX + sqSidePawn * (i+1) + pawnGap*i, pawnGapY, pawnPiecesX + sqSidePawn * (i+1) + pawnGap  *(i+1), pawnPiecesY + sqSidePawn, paint5);
+        }
+
+        for (int i = 0; i < 7; i++) {
+            RectF rectF = new RectF(olderPiecesX + (sqSide * i) + gapOlderPieces * i, olderPiecesY, olderPiecesX + sqSide * (i + 1) + gapOlderPieces * i, olderPiecesY + sqSide);
+            // canvas.drawRect(rectF, paint3);
+            takenPiecesRects.put(new Coordinate(12, i + 1), rectF);
+            // canvas.drawRect(olderPiecesX + (sqSide * (i + 1)) + gapOlderPieces * i, olderPiecesY, olderPiecesX + (sqSide * (i + 1)) + gapOlderPieces * (i + 1), olderPiecesY + sqSide, paint5);
+        }
+
+
+    }
+
+    private void drawTakenBlackPieces(Canvas canvas) {
+
+        Paint paint = new Paint();
+        initialisationOfXY();
+
+        float startX = defX + squareSide - 60;
+        float startY = defY - squareSide * 2;
+        float finishX = defX + chessBoardSize - squareSide - 80;
+        float finishY = startY + 30;
+
+
+        paint.setColor(Color.RED);
+        // paint.setAlpha(80);
+        //canvas.drawRect(defX, defY-(squareSide*2), defX+chessBoardSize, defY, paint);
+        paint.setColor(Color.GRAY);
+        // canvas.drawRect(defX+squareSide, defY-(squareSide*2), defX+chessBoardSize-squareSide, defY-squareSide, paint);
+
+        // defY = 455;
+        int gap = 3;
+        int gapOlderPieces = 10;
+        int pawnGap = 18;
+
+        float olderPiecesX = startX + 20;
+        float sqSide = squareSide - 20 * 2;
+        float olderPiecesY = startY - sqSide - 20;
+
+        float pawnPiecesX = startX + 50;
+        float pawnPiecesY = startY - sqSide + 15;
+        float sqSidePawn = squareSide - 25 * 2.6f;
+        float pawnGapX = pawnPiecesX + sqSidePawn;
+        float pawnGapY = pawnPiecesY;
+
+        paint.setShader(new LinearGradient(startX, startY, defX + chessBoardSize - squareSide, defY, Color.GRAY, Color.DKGRAY, Shader.TileMode.CLAMP));
+        canvas.drawRect(startX, startY, finishX, finishY, paint);
+
+        Paint paint1 = new Paint();
+        paint1.setStyle(Paint.Style.STROKE);
+        paint1.setStrokeWidth(4);
+        paint1.setColor(Color.BLACK);
+        canvas.drawRect(startX - gap, startY, finishX + gap, startY + 30, paint1);
+
+        canvas.drawLine(finishX + gap, startY, (finishX + gap) + 30, startY - 30, paint1);
+        canvas.drawLine(finishX + gap, startY + 30, (finishX + gap) + 30, startY, paint1);
+        canvas.drawLine(startX - gap, startY, (startX - gap) + 30, startY - 30, paint1);
+
+
+        Paint paint4 = new Paint();
+        Paint paint5 = new Paint();
+
+        paint5.setColor(Color.BLUE);
+        paint4.setColor(Color.GREEN);
+
+        paint4.setAlpha(80);
+        paint5.setAlpha(80);
+
+
+        for (int i = 0; i < 8; i++) {
+            RectF rectF = new RectF(pawnPiecesX + sqSidePawn * i + pawnGap * i, pawnPiecesY, pawnPiecesX + sqSidePawn * (i + 1) + pawnGap * i, pawnPiecesY + sqSidePawn);
+            // canvas.drawRect(rectF, paint4);
+            takenPiecesRects.put(new Coordinate(9, i + 1), rectF);
+            // canvas.drawRect(pawnPiecesX + sqSidePawn * (i+1) + pawnGap*i, pawnGapY, pawnPiecesX + sqSidePawn * (i+1) + pawnGap  *(i+1), pawnPiecesY + sqSidePawn, paint5);
+        }
+
+        for (int i = 0; i < 7; i++) {
+            RectF rectF = new RectF(olderPiecesX + (sqSide * i) + gapOlderPieces * i, olderPiecesY, olderPiecesX + sqSide * (i + 1) + gapOlderPieces * i, olderPiecesY + sqSide);
+            // canvas.drawRect(rectF, paint3);
+            takenPiecesRects.put(new Coordinate(10, i + 1), rectF);
+            // canvas.drawRect(olderPiecesX + (sqSide * (i + 1)) + gapOlderPieces * i, olderPiecesY, olderPiecesX + (sqSide * (i + 1)) + gapOlderPieces * (i + 1), olderPiecesY + sqSide, paint5);
+        }
 
 
     }
@@ -406,7 +753,7 @@ public class Board extends View {
         chessBoardSize = Math.min(getWidth(), getHeight()) * scaleFactor;
         squareSide = (int) (chessBoardSize / 8);
         defX = (getWidth() - chessBoardSize) / 2f;
-        defY = (getHeight() - chessBoardSize) / 16f;
+        defY = (getHeight() - chessBoardSize) / 2.5f;
 
     }
 
@@ -416,15 +763,27 @@ public class Board extends View {
         }
     }
 
+    private void drawTakenPieces(Canvas canvas, ArrayList<Piece> pieces) {            //рисует все взятые фигуры из листа pieces
+        for (Piece i : pieces) {
+            drawPieceAt(canvas, listOfTakenPiecesAndPNG.get(i.getName()), takenPiecesRects.get(i.getCoordinates()));
+        }
+    }
+
     private RectF reduceThePiece(RectF square) {              //уменьшает входящий квадрат на размер indent
         return new RectF(square.left + indent, square.top + indent, square.right - indent, square.bottom - indent);
     }
 
+    private RectF reduceThePiece(RectF square, boolean flag) {              //уменьшает входящий квадрат на размер indent
+        return new RectF(square.left + indent, square.top + indent, square.right, square.bottom);
+    }
+
     private void drawPieceAt(Canvas canvas, Bitmap bitmap, RectF rect) {        //рисует фигуру по указанному квадрату
+        Paint paint = new Paint();
         canvas.drawBitmap(bitmap, null, rect, paint);
     }
 
     public void drawChessBoard(Canvas canvas) {
+        Paint paint = new Paint();
         initialisationOfXY();
 
         boolean white_black_flag = true;
@@ -432,23 +791,53 @@ public class Board extends View {
             for (int i = 0; i < 8; i++) {
                 if (white_black_flag) {
                     paint.setColor(Color.parseColor(colors.get("Первый цвет клетки")));
+
                 } else {
                     paint.setColor(Color.parseColor(colors.get("Второй цвет клетки")));
+
                 }
                 white_black_flag = !white_black_flag;
                 canvas.drawRect(defX + (squareSide * i), defY, defX + (squareSide * (i + 1)), (defY + squareSide), paint);
+
                 if (isInvertedBoard) {
                     squares.put(new Coordinate(8 - i, j + 1), new RectF(defX + (squareSide * i), defY, defX + (squareSide * (i + 1)), (defY + squareSide)));
                 } else {
+
                     squares.put(new Coordinate(i + 1, 8 - j), new RectF(defX + (squareSide * i), defY, defX + (squareSide * (i + 1)), (defY + squareSide)));
                 }
             }
             defY += squareSide;
             white_black_flag = !white_black_flag;
         }
-        defY = 0;
     }
 
+    private void drawMarkup(Canvas canvas) {
+        Paint paint = new Paint();
+        boolean white_black_flag = true;
+        String[] text = new String[]{"A","B","C","D","E","F","G","H"};
+        paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        paint.setTextSize(28);
+        for (int i = 0; i < 8; i++) {
+            if (white_black_flag) {
+                paint.setColor(Color.parseColor(colors.get("Первый цвет клетки")));
+            } else {
+                paint.setColor(Color.parseColor(colors.get("Второй цвет клетки")));
+            }
+            RectF rect = squares.get(new Coordinate(i+1,1));
+            canvas.drawText(text[i], rect.left+squareSide/16, rect.bottom-squareSide/16,paint);
+            white_black_flag = !white_black_flag;
+        }
+        for (int i = 0; i < 8; i++) {
+            if (white_black_flag) {
+                paint.setColor(Color.parseColor(colors.get("Первый цвет клетки")));
+            } else {
+                paint.setColor(Color.parseColor(colors.get("Второй цвет клетки")));
+            }
+            RectF rect = squares.get(new Coordinate(1,i+1));
+            canvas.drawText(String.valueOf(i+1), rect.left+squareSide/16, rect.top+squareSide/4,paint);
+            white_black_flag = !white_black_flag;
+        }
+    }
 
     private Piece getPieceAtCoordinates(Coordinate coordinate) {             //возвращает фигуру по указанным координатам
         for (Piece piece : pieces) {
@@ -460,7 +849,9 @@ public class Board extends View {
     }
 
     private void lightAllowedMoves(Canvas canvas, HashSet<Coordinate> coordinates) {
+        Paint paint = new Paint();
         paint.setColor(Color.parseColor(colors.get("Цвет выделения свободного хода")));        //цвет выделения свободных ходов
+        paint.setAlpha(200);
         for (Coordinate coor : coordinates) {
             RectF rect = squares.get(coor);
             canvas.drawCircle(rect.centerX(), rect.centerY(), radius0fFreeMovePoint, paint);
@@ -472,7 +863,7 @@ public class Board extends View {
     }
 
     private boolean checkBordersOfView(float x, float y) {           //проверка не выходит ли указатель за рамки view при перемещении фигуры
-        return x < MainActivity.board.getLeft() || x > MainActivity.board.getRight() || y < MainActivity.board.getTop() || y > MainActivity.board.getBottom();
+        return x < GameActivity.board.getLeft() || x > GameActivity.board.getRight() || y < GameActivity.board.getTop() || y > GameActivity.board.getBottom();
     }
 
     private Coordinate invertedCoordinates(float coorX, float coorY) { //возвращает координаты, инвертированные или нет, в зав. от настроек
@@ -618,7 +1009,6 @@ public class Board extends View {
                 || coor.getNumber() > 8
                 || coor.getNumber() < 1);
 
-        invalidate();
     }
 
     private void verticalAndHorizontalPassage(Coordinate coordinates, HashSet<Coordinate> list) {     //ищет доступные ходы для фигуры по вертикали и горизонтали
@@ -693,58 +1083,4 @@ public class Board extends View {
             }
         }
     }
-
-    /*private String adapterPieceNames(String name) {
-        switch (name) {
-            case ("King Black"):
-            case ("King White"):
-                return "Кр";
-            case ("Queen Black"):
-            case ("Queen White"):
-                return "Ф";
-            case ("Rook Black"):
-            case ("Rook White"):
-                return "Л";
-            case ("Knight Black"):
-            case ("Knight White"):
-                return "К";
-            case ("Bishop Black"):
-            case ("Bishop White"):
-                return "С";
-            case ("Pawn Black"):
-            case ("Pawn White"):
-                return "";
-        }
-        return "SAS";
-    }*/
-    /*private String adapterPieceNames(String name) {
-        switch (name) {
-            case ("King Black"):
-                return "♚";
-            case ("Queen Black"):
-                return "♛";
-            case ("Rook Black"):
-                return "♜";
-            case ("Knight Black"):
-                return "♞";
-            case ("Bishop Black"):
-                return "♝";
-            case ("Pawn Black"):
-                return "♟";
-
-            case ("King White"):
-                return "♔";
-            case ("Queen White"):
-                return "♕";
-            case ("Rook White"):
-                return "♖";
-            case ("Knight White"):
-                return "♘";
-            case ("Bishop White"):
-                return "♗";
-            case ("Pawn White"):
-                return "♙";
-        }
-        return " ";
-    }*/
 }

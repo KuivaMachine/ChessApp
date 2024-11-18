@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".fragments.ProfileFragment">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <Button
+            android:id="@+id/create_game_btn"
+            android:layout_width="300dp"
+            android:layout_height="60dp"
+            android:fontFamily="@font/ubuntubold"
+            android:text="Создать игру"
+            android:textSize="30sp"
+            app:cornerRadius="10dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+        </Button>
+
+        <Button
+            android:id="@+id/join_game_btn"
+            android:layout_width="300dp"
+            android:layout_height="60dp"
+            android:fontFamily="@font/ubuntubold"
+            android:text="Присоединиться"
+            android:layout_marginTop="20dp"
+            android:textSize="25sp"
+            app:cornerRadius="10dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/create_game_btn">
+
+        </Button>
+        <Button
+            android:id="@+id/room_btn"
+            android:layout_width="200dp"
+            android:layout_height="60dp"
+            android:fontFamily="@font/ubuntubold"
+            android:text="getRoom"
+            android:layout_marginBottom="60dp"
+            android:textSize="25sp"
+            app:cornerRadius="10dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/create_game_btn">
+
+        </Button>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>
