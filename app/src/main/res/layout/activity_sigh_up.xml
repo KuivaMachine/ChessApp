@@ -83,7 +83,7 @@
             android:id="@+id/icon_username"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/username_icon"
+            android:src="@drawable/baseline_person_24"
             android:layout_gravity="center_vertical" />
 
         <EditText
@@ -111,7 +111,7 @@
             android:id="@+id/icon_password"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/password_icon"
+            android:src="@drawable/baseline_lock_24"
             android:layout_gravity="center_vertical"
             />
 

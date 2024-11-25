@@ -1,60 +1,67 @@
 package com.example.chessandroid.ChessGame;
 
-import android.content.Intent;
 import android.os.Bundle;
 
 import android.util.Log;
-import android.widget.TextView;
 import android.widget.Toast;
-
-import androidx.activity.EdgeToEdge;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.chessandroid.Activities.MenuActivity;
 import com.example.chessandroid.R;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.example.chessandroid.classes.ChessGame;
+import com.example.chessandroid.databinding.ActivityGameBinding;
+import com.example.chessandroid.enums.ColorOfPiece;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.lang.annotation.Target;
+
 
 public class GameActivity extends AppCompatActivity {
-    static String gameID = "0000";
-
-    FloatingActionButton reloadButton, invertButton, back, checkmate_But, save_but, forward_but;
-
-    TextView countW, countB, move, checkmate;
     static Board board;
+    ChessGame chessGame = new ChessGame();
+    static String gameID;
+    static boolean isInvertedBoard;
+    ColorOfPiece myColorOfPiece;
+    private ActivityGameBinding binding;
+
+    private final FirebaseDatabase database = FirebaseDatabase.getInstance("https://test-f992b-default-rtdb.europe-west1.firebasedatabase.app");
     final private String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_game);
+        binding = ActivityGameBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
         board = findViewById(R.id.board_view);
 
-        countW = findViewById(R.id.countW);
-        countB = findViewById(R.id.countB);
-
+        //ИНИЦИАЛИЗАЦИЯ ДАННЫХ, ПОЛУЧЕННЫХ ПОСЛЕ СОЗДАНИЯ ИГРЫ
         Bundle data = getIntent().getExtras();
         if (data != null) {
             gameID = data.getString("gameID");
-            Board.isInvertedBoard=data.getBoolean("isInvertedBoard");
+            isInvertedBoard = data.getBoolean("isInvertedBoard");
+            myColorOfPiece = data.getSerializable("myColorOfPieces", ColorOfPiece.class);
+            board.invalidate();
         }
-        FirebaseDatabase database = FirebaseDatabase.getInstance("https://test-f992b-default-rtdb.europe-west1.firebasedatabase.app");
-        DatabaseReference myRef = database.getReference(gameID).child("Moves");
 
-       myRef.addValueEventListener(new ValueEventListener() {
+        DatabaseReference game_data = database.getReference(gameID).child("Moves");
+
+        game_data.addValueEventListener(new ValueEventListener() {
+
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Log.d(TAG, "СЧИТЫВАЮ ИЗМЕНЕНИЯ В БД");
                 History history = dataSnapshot.getValue(History.class);
+
                 if (history != null) {
-                    board.makeForwardMoveByHistory(history);
+                    Log.d(TAG, history.toString());
+                    chessGame.makeForwardMoveByHistory(history);
+                } else {
+                    Log.d(TAG, "history = NULL");
                 }
             }
 
@@ -65,59 +72,98 @@ public class GameActivity extends AppCompatActivity {
         });
 
 
-        move = findViewById(R.id.whosMove);
-        move.setText(Board.move);
-        checkmate = findViewById(R.id.checkmate);
-        checkmate.setText(Board.checkmate);
+        binding.btnReload.setOnClickListener((v) -> {
 
-        reloadButton = findViewById(R.id.btn_reload);
-        reloadButton.setOnClickListener((v) -> {
-            Board.makeDefaultPlacement();
-            countW.setText("");
-            countB.setText("");
-            checkmate.setText(Board.checkmate);
+            chessGame.makeDefaultPlacement();
+            binding.countW.setText("");
+            binding.countB.setText("");
+            binding.checkmate.setText("");
             board.invalidate();
         });
 
-
-        invertButton = findViewById(R.id.btn_invert);
-        invertButton.setOnClickListener((v) -> {
-            Board.isInvertedBoard = !Board.isInvertedBoard;
+        binding.btnInvert.setOnClickListener((v) -> {
+            isInvertedBoard = !isInvertedBoard;
             board.invalidate();
         });
 
-        back = findViewById(R.id.back_btn);
-        back.setOnClickListener(v -> {
-            if (!Board.history.isEmpty()) {
-                board.makeBackMoveByHistory(Board.history.getLast());
-                Board.movesBuffer.addFirst(Board.history.getLast());
-                Board.history.removeLast();
-            }
+        binding.backBtn.setOnClickListener(v -> {
+         /*   if (!chessGame.history.isEmpty()) {
+                chessGame.makeBackMoveByHistory(chessGame.history.getLast());
+                chessGame.movesBuffer.addFirst(chessGame.history.getLast());
+                chessGame.history.removeLast();
+            }*/
         });
 
-        forward_but = findViewById(R.id.forward_btn);
-        forward_but.setOnClickListener(v -> {
-
-            if (!Board.movesBuffer.isEmpty()) {
-                board.makeForwardMoveByHistory(Board.movesBuffer.getFirst());
-                Board.history.add(Board.movesBuffer.getFirst());
-                Board.movesBuffer.removeFirst();
-            }
+        binding.forwardBtn.setOnClickListener(v -> {
+            /*if (!chessGame.movesBuffer.isEmpty()) {
+                chessGame.makeForwardMoveByHistory(chessGame.movesBuffer.getFirst());
+                chessGame.history.add(chessGame.movesBuffer.getFirst());
+                chessGame.movesBuffer.removeFirst();
+            }*/
         });
 
-        checkmate_But = findViewById(R.id.checkmate_btn);
-        checkmate_But.setOnClickListener(v -> {
-
+        binding.checkmateBtn.setOnClickListener(v -> {
         });
 
-        save_but = findViewById(R.id.save_btn);
-        save_but.setOnClickListener(v -> {
-            myRef.setValue(Board.history.getLast());
-
-
+        binding.saveBtn.setOnClickListener(v -> {
+            Log.d(TAG, chessGame.history.toString());
+            // game_data.setValue(new History(new Piece("Empty Piece", new Coordinate(0, 0), ColorOfPiece.TEST, false), "eat", new Piece("Empty Piece", new Coordinate(0, 0), ColorOfPiece.TEST, false)));
         });
 
 
     }
+
+    public static void sendMove(History history) {
+//        FirebaseDatabase database = FirebaseDatabase.getInstance("https://test-f992b-default-rtdb.europe-west1.firebasedatabase.app");
+//        DatabaseReference game_data = database.getReference(gameID).child("Moves");
+//        game_data.setValue(history);
+    }
+
+    ;
+
+    /*public static void sendMove(History move){
+       game_data = database.getReference(gameID).child("Moves");
+        game_data.setValue(move);
+    }*/
+  /*  public void isMyMove() {
+        if ((myColorOfPiece == ColorOfPiece.WHITE && Board.isWhiteMoving) || (myColorOfPiece == ColorOfPiece.BLACK && !Board.isWhiteMoving)) {
+            Log.d(TAG, "Сейчас мой ход");
+           // return true;
+        } else {
+            Log.d(TAG, "Сейчас не мой ход");
+           // return false;
+        }
+    }
+*/
+   /* public void writeWhoIsMove() {//ПИШЕТ КОГДА ЧЕЙ ХОД
+        if (Board.isWhiteMoving) {
+            binding.whosMove.setText("Белые ходят");
+        } else {
+            binding.whosMove.setText("Черные ходят");
+        }
+    }
+
+    public void setCheckMateText(boolean isCheckMate) {
+        if (isCheckMate) {
+            if (!Board.isCheckTheWhite) {
+                binding.checkmate.setText("Мат черным!");
+            }
+            if (Board.isCheckTheWhite) {
+                binding.checkmate.setText("Мат белым!");
+            }
+        }
+    }
+
+    public void setCheckText(boolean isCheck) {
+        if (isCheck) {
+
+            if (!Board.isCheckTheWhite) {
+                binding.checkmate.setText("Шах черным!");
+            }
+            if (Board.isCheckTheWhite) {
+                binding.checkmate.setText("Шах белым!");
+            }
+        }
+    }*/
 
 }

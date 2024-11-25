@@ -1,5 +1,7 @@
 package com.example.chessandroid.ChessGame;
 
+import androidx.annotation.NonNull;
+
 import com.example.chessandroid.enums.ColorOfPiece;
 
 import java.util.Objects;
@@ -38,7 +40,6 @@ public class Piece {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Piece piece = (Piece) o;
         return firstMove == piece.firstMove && Objects.equals(coordinates, piece.coordinates) && Objects.equals(name, piece.name) && colorOfPiece == piece.colorOfPiece;
@@ -49,6 +50,7 @@ public class Piece {
         return Objects.hash(coordinates, name, colorOfPiece, firstMove);
     }
 
+    @NonNull
     @Override
     public String toString() {
 

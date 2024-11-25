@@ -15,6 +15,7 @@ import com.example.chessandroid.ChessGame.GameActivity;
 import com.example.chessandroid.classes.Room;
 import com.example.chessandroid.classes.User;
 import com.example.chessandroid.databinding.FragmentProfileBinding;
+import com.example.chessandroid.enums.ColorOfPiece;
 import com.example.chessandroid.enums.Players;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -33,21 +34,25 @@ public class ProfileFragment extends Fragment {
     User user;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
         FirebaseAuth auth = FirebaseAuth.getInstance();
+        String firebaseLink = "https://test-f992b-default-rtdb.europe-west1.firebasedatabase.app";
+        String currentUserID = "UID";
         FirebaseUser currentUser = auth.getCurrentUser();
-
-        database = FirebaseDatabase.getInstance("https://test-f992b-default-rtdb.europe-west1.firebasedatabase.app");
+        if (currentUser != null) {
+            currentUserID = currentUser.getUid();
+        }
+        database = FirebaseDatabase.getInstance(firebaseLink);
         binding = FragmentProfileBinding.inflate(inflater, container, false);
-        reference = database.getReference("User").child(currentUser.getUid());
+        reference = database.getReference("User").child(currentUserID);
 
         reference.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 user = snapshot.getValue(User.class);
-               // Log.d(TAG, user.toString());
+                // Log.d(TAG, user.toString());
             }
 
             @Override
@@ -66,21 +71,20 @@ public class ProfileFragment extends Fragment {
                 Intent intent = new Intent(getContext(), GameActivity.class);
                 intent.putExtra("gameID", gameID);
                 intent.putExtra("isInvertedBoard", false);
+                intent.putExtra("myColorOfPieces", ColorOfPiece.WHITE);
 
                 reference = database.getReference(gameID).child("Room");
                 Log.d(TAG, "OLD ROOM before SEND:");
                 Log.d(TAG, room.toString());
                 reference.setValue(room);
-
                 reference.addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         Room room = snapshot.getValue(Room.class);
                         Log.d(TAG, "on data change");
                         Log.d(TAG, "OLD ROOM written");
-                        Log.d(TAG, room.toString());
-                       // Log.d(TAG, room.toString());
-                        if (room.isRoomFull()) {
+
+                        if (room != null && room.isRoomFull()) {
                             Log.d(TAG, "room is full");
                             Log.d(TAG, room.toString());
                             startActivity(intent);
@@ -112,8 +116,9 @@ public class ProfileFragment extends Fragment {
                         Log.d(TAG, "JOIN THE GAME");
                         Log.d(TAG, "OLD ROOM:");
                         Log.d(TAG, room.toString());
-                        if (!room.isRoomFull()&&player_1!=null) {
-                            Room roomFull = new Room(player_1, user, true, room.getWho_is_white());
+
+                        if (!room.isRoomFull() && player_1 != null) {
+                            Room roomFull = new Room(player_1, user, true, room.getWho_plays_white());
                             Log.d(TAG, "NEW ROOM:");
                             Log.d(TAG, roomFull.toString());
                             reference.setValue(roomFull);
@@ -121,9 +126,15 @@ public class ProfileFragment extends Fragment {
 
                             Intent intent = new Intent(getContext(), GameActivity.class);
                             intent.putExtra("gameID", gameID);
-                            switch (room.getWho_is_white()){
-                                case PLAYER_1:intent.putExtra("isInvertedBoard", true);
-                                case PLAYER_2:intent.putExtra("isInvertedBoard", false);
+                            switch (room.getWho_plays_white()) {
+                                case PLAYER_1:
+                                    intent.putExtra("isInvertedBoard", true);
+                                    intent.putExtra("myColorOfPieces", ColorOfPiece.BLACK);
+                                    break;
+                                case PLAYER_2:
+                                    intent.putExtra("isInvertedBoard", false);
+                                    intent.putExtra("myColorOfPieces", ColorOfPiece.WHITE);
+                                    break;
                             }
 
                             startActivity(intent);
@@ -141,26 +152,41 @@ public class ProfileFragment extends Fragment {
             }
         });
 
-binding.roomBtn.setOnClickListener(new View.OnClickListener() {
-    @Override
-    public void onClick(View view) {
-        String gameID = "start";
-        reference = database.getReference(gameID).child("Room");
-        reference.addListenerForSingleValueEvent(new ValueEventListener() {
+        binding.roomBtn.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Log.d(TAG, snapshot.getValue(Room.class).toString());
-            }
+            public void onClick(View view) {
+                String gameID = "start";
+                reference = database.getReference(gameID).child("Room");
+                reference.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        Log.d(TAG, snapshot.getValue(Room.class).toString());
+                    }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
 
+                    }
+                });
             }
         });
-    }
-});
-        return binding.getRoot();
 
+        binding.startBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getContext(), GameActivity.class);
+                intent.putExtra("gameID", "start");
+                intent.putExtra("isInvertedBoard", false);
+                intent.putExtra("myColorOfPieces", ColorOfPiece.WHITE);
+                startActivity(intent);
+            }
+        });
+
+
+
+
+
+        return binding.getRoot();
     }
 
     @Override

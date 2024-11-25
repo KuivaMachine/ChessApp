@@ -8,16 +8,16 @@ public class Room {
     private User player_1;
     private User player_2;
     private boolean isRoomFull;
-    private Players who_is_white;
+    private Players who_plays_white;
 
     public Room() {
     }
 
-    public Room(User player_1, User player_2, boolean isRoomFull, Players who_is_white) {
+    public Room(User player_1, User player_2, boolean isRoomFull, Players who_plays_white) {
         this.player_1 = player_1;
         this.player_2 = player_2;
         this.isRoomFull = isRoomFull;
-        this.who_is_white = who_is_white;
+        this.who_plays_white = who_plays_white;
     }
 
     public User getPlayer_1() {
@@ -44,12 +44,12 @@ public class Room {
         isRoomFull = roomFull;
     }
 
-    public Players getWho_is_white() {
-        return who_is_white;
+    public Players getWho_plays_white() {
+        return who_plays_white;
     }
 
-    public void setWho_is_white(Players who_is_white) {
-        this.who_is_white = who_is_white;
+    public void setWho_plays_white(Players who_plays_white) {
+        this.who_plays_white = who_plays_white;
     }
 
     @Override
@@ -58,7 +58,7 @@ public class Room {
                 "player_1=" + player_1 +
                 ", player_2=" + player_2 +
                 ", isRoomFull=" + isRoomFull +
-                ", who_is_white=" + who_is_white +
+                ", who_is_white=" + who_plays_white +
                 '}';
     }
 }

@@ -1,6 +1,8 @@
 package com.example.chessandroid.ChessGame;
 
 
+import androidx.annotation.NonNull;
+
 import com.google.firebase.database.IgnoreExtraProperties;
 
 import java.util.Objects;
@@ -29,7 +31,6 @@ public class Coordinate {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Coordinate that = (Coordinate) o;
         return letter == that.letter && number == that.number;
@@ -40,6 +41,7 @@ public class Coordinate {
         return Objects.hash(letter, number);
     }
 
+    @NonNull
     @Override
     public String toString() {
         return letter +""+number;

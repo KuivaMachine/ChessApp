@@ -9,47 +9,39 @@
     tools:context=".ChessGame.GameActivity">
 
 
+    <include
+        android:id="@+id/chessboard"
+        layout="@layout/chessboard"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        >
+
+    </include>
+
     <TextView
         android:id="@+id/countB"
-        android:gravity="center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="40dp"
-        android:elevation="20dp"
+        android:gravity="center"
         android:textColor="#C6C6C6"
-        android:textColorHint="#C6C6C6"
         android:textSize="40sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="CountBlackPieces" />
+
     <TextView
         android:id="@+id/countW"
-        android:gravity="center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:elevation="20dp"
+        android:gravity="center"
         android:textColor="#C6C6C6"
         android:textColorHint="#C6C6C6"
         android:textSize="40sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/countB" />
-
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="horizontal"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <com.example.chessandroid.ChessGame.Board
-            android:id="@+id/board_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:elevation="0dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-    </LinearLayout>
+        app:layout_constraintTop_toBottomOf="@id/countB"
+        tools:text="CountWhitePieces"
+        />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/back_btn"
@@ -59,23 +51,11 @@
         android:backgroundTint="@color/biege"
         android:clickable="true"
         android:contentDescription="TODO"
-        app:layout_constraintBottom_toTopOf="@id/btn_reload"
         app:layout_constraintStart_toStartOf="@+id/btn_invert"
+       app:layout_constraintBottom_toTopOf="@id/btn_invert"
         app:rippleColor="@color/white"
         app:srcCompat="@drawable/back" />
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/checkmate_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="30dp"
-        android:backgroundTint="@color/biege"
-        android:clickable="true"
-        android:contentDescription="TODO"
-        app:layout_constraintTop_toTopOf="@+id/back_btn"
-        app:layout_constraintBottom_toBottomOf="@+id/back_btn"
-        app:layout_constraintStart_toEndOf="@+id/forward_btn"
-        app:rippleColor="@color/white"
-        app:srcCompat="@drawable/iconchess" />
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/forward_btn"
         android:layout_width="wrap_content"
@@ -84,24 +64,40 @@
         android:backgroundTint="@color/biege"
         android:clickable="true"
         android:contentDescription="TODO"
-        app:layout_constraintTop_toTopOf="@+id/back_btn"
         app:layout_constraintBottom_toBottomOf="@+id/back_btn"
         app:layout_constraintStart_toEndOf="@+id/back_btn"
+        app:layout_constraintTop_toTopOf="@+id/back_btn"
         app:rippleColor="@color/white"
         app:srcCompat="@drawable/forward_btn" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/checkmate_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="30dp"
+        android:backgroundTint="@color/biege"
+        android:clickable="true"
+        android:contentDescription="TODO"
+        app:layout_constraintBottom_toBottomOf="@+id/back_btn"
+        app:layout_constraintStart_toEndOf="@+id/forward_btn"
+        app:layout_constraintTop_toTopOf="@+id/back_btn"
+        app:rippleColor="@color/white"
+        app:srcCompat="@drawable/iconchess" />
+
+
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/save_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
 
+        android:layout_marginEnd="30dp"
         android:backgroundTint="@color/biege"
         android:clickable="true"
         android:contentDescription="TODO"
-        android:layout_marginEnd="30dp"
-       app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/back_btn"
         app:layout_constraintBottom_toBottomOf="@+id/back_btn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/back_btn"
         app:rippleColor="@color/white"
         app:srcCompat="@drawable/save" />
 
@@ -110,7 +106,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
-        android:layout_marginBottom="100dp"
+        android:layout_marginBottom="80dp"
         android:backgroundTint="@color/black"
         android:clickable="true"
         android:contentDescription="TODO"
@@ -139,8 +135,8 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="15dp"
         android:elevation="20dp"
+        android:text="Who is moving?"
         android:gravity="center"
-        android:hint="Who is moving?"
         android:textColor="#C6C6C6"
         android:textColorHint="#C6C6C6"
         android:textSize="25sp"
