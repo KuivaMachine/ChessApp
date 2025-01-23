@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".View.Fragments.EnemyFragment">
+
+<LinearLayout
+    android:padding="10dp"
+    android:gravity="center_vertical"
+    android:background="@drawable/shape_bg_enemy"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/playerIconIMG"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_margin="10dp"
+        android:src="@drawable/baseline_person_24">
+    </ImageView>
+    <TextView
+        android:id="@+id/playerNickname"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Kuiva Machine"
+        android:textSize="30sp"
+        android:fontFamily="@font/batmanforeveralternatecyr"/>
+</LinearLayout>
+
+
+</FrameLayout>

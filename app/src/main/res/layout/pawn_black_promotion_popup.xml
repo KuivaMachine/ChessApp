@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".View.Fragments.PawnPromotionDialog"
+    android:background="@drawable/shape_pieces_icon">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/queen_black_piece_popup"
+            android:padding="5dp"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+
+            android:background="@drawable/shape_pieces_icon"
+            android:contentDescription="TODO"
+            android:src="@drawable/queen_black_new">
+
+        </ImageView>
+
+        <ImageView
+            android:id="@+id/bishop_black_piece_popup"
+            android:padding="5dp"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+
+            android:background="@drawable/shape_pieces_icon"
+            android:contentDescription="TODO"
+            android:src="@drawable/bishop_black_new">
+
+        </ImageView>
+
+        <ImageView
+            android:id="@+id/knight_black_piece_popup"
+            android:padding="5dp"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+
+            android:background="@drawable/shape_pieces_icon"
+            android:contentDescription="TODO"
+            android:src="@drawable/knight_black_new">
+
+        </ImageView>
+
+        <ImageView
+            android:id="@+id/rook_black_piece_popup"
+            android:padding="5dp"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+
+            android:background="@drawable/shape_pieces_icon"
+            android:contentDescription="TODO"
+            android:src="@drawable/rook_black_new">
+
+        </ImageView>
+
+
+    </LinearLayout>
+</FrameLayout>

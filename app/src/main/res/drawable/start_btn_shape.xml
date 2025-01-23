@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Прессованная кнопка -->
+    <item android:state_pressed="true">
+        <shape>
+            <solid android:color="#10FFFFFF"/> <!-- Цвет фона при нажатии -->
+            <corners android:radius="20dp"/>
+            <stroke android:width="3dp" android:color="#000000"/> <!-- Обводка -->
+        </shape>
+    </item>
+
+    <!-- Обычное состояние кнопки -->
+    <item>
+        <shape>
+            <solid android:color="#00ff00"/> <!-- Основной цвет фона -->
+            <corners android:radius="20dp"/>
+            <stroke android:width="3dp" android:color="#000000"/> <!-- Обводка -->
+        </shape>
+    </item>
+</selector>

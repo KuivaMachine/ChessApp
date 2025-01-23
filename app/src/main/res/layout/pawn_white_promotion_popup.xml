@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/shape_pieces_icon"
+    android:orientation="horizontal"
+    tools:context=".View.Fragments.PawnPromotionDialog">
+
+    <ImageView
+        android:id="@+id/queen_piece_popup"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="@drawable/shape_pieces_icon"
+        android:contentDescription="TODO"
+        android:padding="5dp"
+        android:src="@drawable/queen_white_new">
+
+    </ImageView>
+
+    <ImageView
+        android:id="@+id/bishop_piece_popup"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="@drawable/shape_pieces_icon"
+        android:contentDescription="TODO"
+        android:padding="5dp"
+        android:src="@drawable/bishop_white_new">
+
+    </ImageView>
+
+    <ImageView
+        android:id="@+id/knight_piece_popup"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="@drawable/shape_pieces_icon"
+        android:contentDescription="TODO"
+        android:padding="5dp"
+        android:src="@drawable/knight_white_new">
+
+    </ImageView>
+
+    <ImageView
+        android:id="@+id/rook_piece_popup"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="@drawable/shape_pieces_icon"
+        android:contentDescription="TODO"
+        android:padding="5dp"
+        android:src="@drawable/rook_white_new">
+
+    </ImageView>
+
+
+</LinearLayout>

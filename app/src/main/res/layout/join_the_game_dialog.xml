@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/shape_bg_enemy"
+    tools:context=".View.Fragments.JoinTheGameDialog">
+
+    <LinearLayout
+        android:layout_width="400dp"
+        android:layout_height="500dp"
+        android:orientation="vertical"
+        tools:ignore="UselessParent"
+        android:weightSum="6">
+
+        <EditText
+            android:id="@+id/gameID_et"
+            android:layout_width="300dp"
+            android:layout_height="80dp"
+            android:layout_gravity="center"
+            android:autofillHints=""
+            android:layout_weight="1"
+            android:layout_margin="30dp"
+            android:background="@drawable/shape_bg_gameid"
+            android:hint="Введите код"
+            android:inputType="number"
+            android:textSize="40sp">
+
+        </EditText>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/ubuntumedium"
+            android:layout_weight="5"
+            android:gravity="center"
+            android:text="Введите код игры из устройства вашего соперника"
+            android:textColor="@color/black"
+            android:textSize="30sp" />
+
+
+    </LinearLayout>
+
+
+</FrameLayout>

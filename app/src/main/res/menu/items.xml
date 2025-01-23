@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:bbn_itemAnimationDuration="2000"
+    android:background="#00ffff"
+    app:bbn_badgeColor="#FFFF0000"
+    app:bbn_rippleColor="#33ffff"
+    app:bbn_itemColorActive="@color/biegeD"
+    app:bbn_itemColorInactive="@color/white"
+    app:bbn_itemColorDisabled="@color/black"
+    app:bbn_alwaysShowLabels="false">
+
+<item
+android:icon="@drawable/baseline_person_24"
+android:id="@+id/profile"
+android:title="@string/profile_name" /><item
+android:color="@android:color/holo_orange_dark"
+android:icon="@drawable/baseline_supervised_user_circle_24"
+android:id="@+id/users"
+android:title="@string/players_text" /><item
+android:color="#FF5252"
+android:icon="@drawable/baseline_settings_24"
+android:id="@+id/settings"
+android:title="@string/settings_label" />
+
+    </menu>
