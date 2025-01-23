@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".fragments.ProfileFragment">
+    tools:context=".View.Fragments.ProfileFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -39,20 +39,7 @@
             app:layout_constraintTop_toBottomOf="@id/create_game_btn">
 
         </Button>
-        <Button
-            android:id="@+id/room_btn"
-            android:layout_width="200dp"
-            android:layout_height="60dp"
-            android:fontFamily="@font/ubuntubold"
-            android:text="getRoom"
-            android:layout_marginBottom="60dp"
-            android:textSize="25sp"
-            app:cornerRadius="10dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/create_game_btn">
 
-        </Button>
         <Button
             android:id="@+id/start_btn"
             android:layout_width="200dp"
@@ -64,7 +51,7 @@
             app:cornerRadius="10dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/room_btn">
+            app:layout_constraintBottom_toTopOf="@id/create_game_btn">
 
         </Button>
     </androidx.constraintlayout.widget.ConstraintLayout>

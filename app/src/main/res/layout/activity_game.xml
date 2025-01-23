@@ -6,7 +6,20 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#2B2B2B"
-    tools:context=".ChessGame.GameActivity">
+    tools:context=".View.GameActivity">
+
+    <FrameLayout
+        android:id="@+id/frame_container"
+        android:layout_marginHorizontal="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/shape_bg_enemy"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+    </FrameLayout>
 
 
     <include
@@ -15,10 +28,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         >
-
     </include>
 
-    <TextView
+
+    <!--<TextView
         android:id="@+id/countB"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -28,7 +41,8 @@
         android:textSize="40sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="CountBlackPieces" />
+        tools:text="CountBlackPieces"
+        android:visibility="gone"/>
 
     <TextView
         android:id="@+id/countW"
@@ -41,18 +55,33 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/countB"
         tools:text="CountWhitePieces"
-        />
-
+        android:visibility="gone"
+        />-->
+    <LinearLayout
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:orientation="vertical"
+        android:weightSum="3"
+        android:padding="15dp"
+        android:layout_marginBottom="30dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+<LinearLayout
+    android:layout_gravity="center"
+    android:layout_marginVertical="15dp"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/back_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="60dp"
+        android:layout_marginEnd="20dp"
         android:backgroundTint="@color/biege"
         android:clickable="true"
         android:contentDescription="TODO"
-        app:layout_constraintStart_toStartOf="@+id/btn_invert"
-       app:layout_constraintBottom_toTopOf="@id/btn_invert"
         app:rippleColor="@color/white"
         app:srcCompat="@drawable/back" />
 
@@ -60,29 +89,56 @@
         android:id="@+id/forward_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
         android:backgroundTint="@color/biege"
         android:clickable="true"
         android:contentDescription="TODO"
-        app:layout_constraintBottom_toBottomOf="@+id/back_btn"
-        app:layout_constraintStart_toEndOf="@+id/back_btn"
-        app:layout_constraintTop_toTopOf="@+id/back_btn"
         app:rippleColor="@color/white"
         app:srcCompat="@drawable/forward_btn" />
 
+</LinearLayout>
+
+
+        <TextView
+            android:id="@+id/whosMove"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:elevation="20dp"
+            tools:text="Who is moving?"
+            android:gravity="center"
+            android:fontFamily="@font/ubuntumedium"
+            android:textColor="#C6C6C6"
+            android:textColorHint="#C6C6C6"
+            android:textSize="25sp"
+            />
+
+        <TextView
+            android:id="@+id/check_text"
+            android:layout_marginVertical="15dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:gravity="center"
+            android:textSize="35sp"
+            tools:text="check" />
+
+
+    </LinearLayout>
+
+
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:visibility="gone"
         android:id="@+id/checkmate_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="30dp"
         android:backgroundTint="@color/biege"
         android:clickable="true"
+        app:layout_constraintStart_toStartOf="parent"
         android:contentDescription="TODO"
-        app:layout_constraintBottom_toBottomOf="@+id/back_btn"
-        app:layout_constraintStart_toEndOf="@+id/forward_btn"
-        app:layout_constraintTop_toTopOf="@+id/back_btn"
         app:rippleColor="@color/white"
-        app:srcCompat="@drawable/iconchess" />
+        app:srcCompat="@drawable/iconchess"
+        tools:ignore="MissingConstraints"/>
 
 
 
@@ -90,19 +146,20 @@
         android:id="@+id/save_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-
+        android:visibility="gone"
         android:layout_marginEnd="30dp"
         android:backgroundTint="@color/biege"
         android:clickable="true"
         android:contentDescription="TODO"
-        app:layout_constraintBottom_toBottomOf="@+id/back_btn"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/back_btn"
+        app:layout_constraintStart_toStartOf="parent"
         app:rippleColor="@color/white"
-        app:srcCompat="@drawable/save" />
+        app:srcCompat="@drawable/save"
+        tools:ignore="MissingConstraints" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btn_invert"
+        android:visibility="gone"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
@@ -120,7 +177,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
-
+        android:visibility="gone"
         android:backgroundTint="@color/black"
         android:clickable="true"
         android:contentDescription="TODO"
@@ -129,32 +186,7 @@
         app:rippleColor="@color/biegeLL"
         app:srcCompat="@drawable/queen_black" />
 
-    <TextView
-        android:id="@+id/whosMove"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="15dp"
-        android:elevation="20dp"
-        android:text="Who is moving?"
-        android:gravity="center"
-        android:textColor="#C6C6C6"
-        android:textColorHint="#C6C6C6"
-        android:textSize="25sp"
-        app:layout_constraintBottom_toBottomOf="@id/btn_reload"
-        app:layout_constraintStart_toEndOf="@id/btn_reload"
-        app:layout_constraintTop_toTopOf="@id/btn_reload" />
 
-    <TextView
-        android:id="@+id/checkmate"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/white"
-        android:textSize="35sp"
-        app:layout_constraintBottom_toTopOf="@+id/btn_reload"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/checkmate_btn"
-        tools:text="check" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

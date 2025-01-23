@@ -36,10 +36,12 @@ android {
 }
 
 dependencies {
+
+    implementation(libs.bottom.navigation)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.google.firebase.auth)
-
+    implementation(libs.lottie)
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)

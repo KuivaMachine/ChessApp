@@ -32,4 +32,15 @@
     <string name="profile_name">Профиль</string>
     <string name="players_text">Игроки</string>
     <string name="settings_label">Настройки</string>
+    <string name="instruction_text">На другом устройстве нажмите \"Присоединиться\" и введите код:</string>
+    <string name="white_txt">Белые</string>
+    <string name="random_txt">Случайно</string>
+    <string name="black_txt">Черные</string>
+    <string name="start_game">Start Game</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="tab_text_1">Tab 1</string>
+    <string name="tab_text_2">Tab 2</string>
+    <string name="title_activity_main2">MainActivity2</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
 </resources>
